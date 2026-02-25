@@ -1,2 +1,2 @@
 # python-inside-computers
-Blocky game-like electricity simulator
+Blocky game-like electricity simulator in Python
