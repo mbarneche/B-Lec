@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(BLec LANGUAGES CXX)
+project(BLec LANGUAGES C CXX)
 
 # Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
@@ -38,6 +38,14 @@ else()
     set(GLM_TARGET glm::glm)
 endif()
 
+#GLAD
+set(GLAD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glad/include)
+set(GLAD_SRC ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glad/src/glad.c)
+
+add_library(glad STATIC ${GLAD_SRC})
+set_target_properties(glad PROPERTIES LINKER_LANGUAGE C)
+target_include_directories(glad PUBLIC ${GLAD_INCLUDE_DIR})
+
 # Main executable
 add_executable(blec 
     ElectricitySimulator/src/main.cpp
@@ -60,6 +68,7 @@ add_executable(blec
 target_include_directories(blec PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/include
     ${OPENGL_INCLUDE_DIR}
+    ${GLAD_INCLUDE_DIR}
 )
 
 # Link libraries
@@ -67,6 +76,7 @@ target_link_libraries(blec PRIVATE
     ${GLFW_TARGET}
     OpenGL::GL
     ${GLM_TARGET}
+    glad
 )
 
 # Platform-specific settings
