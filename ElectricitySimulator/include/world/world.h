@@ -87,8 +87,9 @@ public:
 
     /**
      * @brief Update the world state (power propagation, etc.)
+     * @param delta_time Time elapsed since last frame in seconds
      */
-    void Update();
+    void Update(float delta_time);
 
     /**
      * @brief Unload chunks that are far from the given position
@@ -150,6 +151,7 @@ private:
 private:
     std::unordered_map<uint64_t, std::unique_ptr<Chunk>> chunks_;
     glm::vec3 spawn_point_;
+    float tick_accumulator_;
     
     // Tracking which chunks need power updates
     std::vector<glm::ivec3> power_update_queue_;

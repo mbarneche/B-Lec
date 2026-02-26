@@ -39,13 +39,22 @@ struct Block {
     bool is_powered;          ///< Whether this block is currently powered
     uint8_t power_level;      ///< Power level (0-15), similar to Minecraft redstone
     uint8_t rotation;         ///< Rotation state (0-3 for block orientation)
+    bool is_active;           ///< For switches/buttons/repeaters (player or delayed state)
+    uint8_t ticks_remaining;  ///< Countdown for button pulse or repeater delay
+    uint8_t delay_ticks;      ///< Repeater delay in ticks
     
     /**
      * @brief Constructor
      * @param block_type Type of the block
      */
     Block(BlockType block_type = BlockType::AIR) 
-        : type(block_type), is_powered(false), power_level(0), rotation(0) {}
+        : type(block_type),
+          is_powered(false),
+          power_level(0),
+          rotation(0),
+          is_active(false),
+          ticks_remaining(0),
+          delay_ticks(2) {}
 
     /**
      * @brief Check if this block is solid (not air)

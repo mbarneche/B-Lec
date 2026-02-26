@@ -134,27 +134,36 @@ void Renderer::InitializeCubeMesh() {
 void Renderer::Render(World* world, Camera* camera) {
     shader_->Use();
 
+    // Get camera matrices for 3D transformation
     glm::mat4 projection = camera->GetProjectionMatrix();
     glm::mat4 view = camera->GetViewMatrix();
 
+    // Set shader uniforms for camera transformation
     shader_->SetMatrix4("projection", projection);
     shader_->SetMatrix4("view", view);
 
-    // Render chunks
+    // Render all loaded chunks
     if (world) {
         auto chunks = world->GetAllChunks();
         for (Chunk* chunk : chunks) {
+            // Calculate chunk world position
             glm::ivec3 chunk_pos = chunk->GetPosition();
             glm::vec3 world_pos = glm::vec3(chunk_pos) * static_cast<float>(CHUNK_SIZE);
 
-            // Render blocks in this chunk
+            // Iterate through all blocks in the chunk
+            // TODO: Optimize by using chunk mesh instead of rendering individual cubes
             for (uint32_t x = 0; x < CHUNK_SIZE; ++x) {
                 for (uint32_t y = 0; y < CHUNK_SIZE; ++y) {
                     for (uint32_t z = 0; z < CHUNK_SIZE; ++z) {
                         Block* block = chunk->GetBlock(x, y, z);
                         if (block && block->IsSolid()) {
+                            // Calculate block world position
                             glm::vec3 block_pos = world_pos + glm::vec3(x, y, z);
+                            
+                            // Get block color (may vary based on powered state)
                             glm::vec3 color = BlockRegistry::GetBlockColor(block->type, block->is_powered);
+                            
+                            // Render the block as a cube
                             RenderCube(block_pos, 1.0f, color);
                         }
                     }

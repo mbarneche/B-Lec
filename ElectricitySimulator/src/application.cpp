@@ -13,14 +13,16 @@
 #include "ui/ui_system.h"
 
 #include <GLFW/glfw3.h>
+#include <glad/glad.h>
 #include <iostream>
 
 // Forward declarations for GLFW callbacks
 static Application* g_app_instance = nullptr;
 
 static void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
-    if (g_app_instance) {
-        // Handle resize
+    if (g_app_instance && width > 0 && height > 0) {
+        g_app_instance->OnWindowResize(static_cast<uint32_t>(width), 
+                                        static_cast<uint32_t>(height));
     }
 }
 
@@ -148,6 +150,22 @@ void Application::RequestClose() {
     is_running_ = false;
 }
 
+void Application::OnWindowResize(uint32_t width, uint32_t height) {
+    window_width_ = width;
+    window_height_ = height;
+    
+    // Update OpenGL viewport
+    glViewport(0, 0, width, height);
+    
+    // Update camera aspect ratio
+    if (camera_) {
+        camera_->SetAspectRatio(static_cast<float>(width) / static_cast<float>(height));
+    }
+    
+    // TODO: Update UI system if it needs resize notification
+    // TODO: Update renderer if needed
+}
+
 void Application::ProcessInput() {
     input_manager_->Update();
 
@@ -169,14 +187,16 @@ void Application::ProcessInput() {
     glfwGetCursorPos(window_, &mouse_x, &mouse_y);
     static double last_scroll_y = 0.0;
     
-    // Scroll wheel cycling (would need scroll callback - placeholder)
+    // TODO: Implement proper scroll callback for block selection
     if (input_manager_->IsKeyJustPressed(Key::E)) {
         block_selector_->SetMenuVisible(!block_selector_->IsMenuVisible());
     }
 
-    // Camera movement
+    // Camera movement - use actual delta time from Run() loop
+    // Note: Create a member variable for this or pass it as parameter
     float move_speed = 32.0f;
-    float delta_time = 0.016f; // Approximate 60 FPS
+    double current_time = glfwGetTime();
+    float delta_time = static_cast<float>(current_time - last_frame_time_);
     
     if (input_manager_->IsKeyPressed(Key::W)) {
         camera_->MoveForward(move_speed * delta_time);
@@ -205,10 +225,17 @@ void Application::ProcessInput() {
 
 void Application::Update(float delta_time) {
     camera_->Update(delta_time);
-    world_->Update();
+    world_->Update(delta_time);
     ui_system_->Update(delta_time);
     ui_system_->SetCameraPosition(camera_->GetPosition());
-    ui_system_->SetSelectedBlock(BlockRegistry::GetBlockInfo(block_selector_->GetSelectedBlock())->name);
+    
+    // Safely get block info with null check
+    const BlockInfo* block_info = BlockRegistry::GetBlockInfo(block_selector_->GetSelectedBlock());
+    if (block_info) {
+        ui_system_->SetSelectedBlock(block_info->name);
+    } else {
+        ui_system_->SetSelectedBlock("Unknown");
+    }
 }
 
 void Application::Render() {

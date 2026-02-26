@@ -68,6 +68,13 @@ public:
      */
     void RequestClose();
 
+    /**
+     * @brief Handle window resize events
+     * @param width New window width
+     * @param height New window height
+     */
+    void OnWindowResize(uint32_t width, uint32_t height);
+
 private:
     /**
      * @brief Update game logic for the current frame
