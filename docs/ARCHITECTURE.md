@@ -62,6 +62,12 @@ Each module handles a single aspect of the application:
 │                │                           │
 │                ▼                           │
 │  ┌────────────────────────────┐           │
+│  │    UI Manager              │           │
+│  │  (Crosshair + Pause Menu)  │           │
+│  └────────────────────────────┘           │
+│                │                           │
+│                ▼                           │
+│  ┌────────────────────────────┐           │
 │  │    Debug Overlay           │           │
 │  └────────────────────────────┘           │
 └────────────────────────────────────────────┘
@@ -326,6 +332,75 @@ uint32_t visible = block_system.GetVisibleBlockCount();
 - Camera module (for position/orientation)
 - BlockSystem module (for block counts)
 
+### UI Module (`include/ui/`, `src/ui/`)
+
+**Purpose**: Manages user interface elements including crosshair, pause menu, and mouse lock state.
+
+**Key Classes**:
+- `UIManager`: Manages UI state, pause menu, and crosshair rendering
+- `Button`: Simple struct for button hit detection
+
+**Key Features**:
+- **Crosshair**: Always-visible plus-sign crosshair in screen center for aiming
+- **Pause Menu**: ESC-toggleable menu with Resume and Quit buttons
+- **Mouse Lock**: Automatic cursor locking during gameplay (GLFW_CURSOR_DISABLED)
+- **Button Interaction**: Click detection for pause menu buttons
+- **Screen Adaptation**: Automatically adjusts UI positions when window resizes
+
+**Pause Menu**:
+- Semi-transparent dark background overlay (70% opacity)
+- "PAUSED" title text
+- Resume button (green) - resumes gameplay
+- Quit button (red) - closes application
+- Resume via ESC key or clicking Resume button
+
+**Mouse Lock Behavior**:
+- **Playing**: Mouse locked to window center (cursor hidden, infinite movement)
+- **Paused**: Mouse unlocked (cursor visible, normal behavior)
+- Uses GLFW's `GLFW_CURSOR_DISABLED` mode for seamless camera control
+
+**Public Methods**:
+- `Initialize(width, height)`: Set up UI with screen dimensions
+- `TogglePause()`: Toggle between paused and playing states
+- `SetPaused(bool)`: Explicitly set pause state
+- `IsPaused()`: Query current pause state
+- `HandleMouseClick(x, y)`: Process mouse clicks on pause menu buttons
+- `RenderCrosshair(renderer)`: Draw crosshair in 2D overlay
+- `RenderPauseMenu(renderer, font)`: Draw pause menu when paused
+- `UpdateScreenDimensions(width, height)`: Adjust UI for window resize
+
+**UI Layout Constants**:
+- Crosshair: 20px lines with 2px thickness, 5px center gap
+- Buttons: 150px × 40px with 20px vertical spacing
+- Menu: Centered on screen, adapts to window size
+
+**Typical Usage**:
+```cpp
+blec::ui::UIManager ui;
+ui.Initialize(1280, 720);
+
+// In main loop:
+if (ui.IsPaused()) {
+    // Unlock mouse, freeze gameplay
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    
+    // Handle menu clicks
+    auto action = ui.HandleMouseClick(mouse_x, mouse_y);
+    if (action == UIManager::ButtonAction::Quit) { /* exit */ }
+} else {
+    // Lock mouse, enable gameplay
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+
+// Rendering (in 2D phase):
+ui.RenderCrosshair(renderer);
+ui.RenderPauseMenu(renderer, font);
+```
+
+**Dependencies**:
+- Render module (for drawing primitives and text)
+- Input module (for mouse position and clicks via GLFW)
+
 
 ## Data Flow
 
@@ -378,6 +453,8 @@ include/
   │   └── font.h                # Bitmap font rendering
   ├── world/
   │   └── block_system.h        # Voxel grid and frustum culling
+  ├── ui/
+  │   └── ui_manager.h          # UI, crosshair, and pause menu
   └── debug/
       └── debug_overlay.h       # Debug overlay interface
 
@@ -393,6 +470,8 @@ src/
   │   └── font.cpp              # Font implementation + data
   ├── world/
   │   └── block_system.cpp      # Block system implementation
+  ├── ui/
+  │   └── ui_manager.cpp        # UI manager implementation
   ├── debug/
   │   └── debug_overlay.cpp     # Debug overlay implementation
   └── main.cpp                  # Application entry point
@@ -411,6 +490,8 @@ code_testing/
   │   └── test_renderer_3d.cpp
   ├── world/
   │   └── test_block_system.cpp
+  ├── ui/
+  │   └── test_ui_manager.cpp
   └── debug/
       └── test_debug_overlay.cpp
 ```

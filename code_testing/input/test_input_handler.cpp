@@ -117,4 +117,50 @@ TEST_CASE(TestMouseDelta) {
     ASSERT_EQ(dy, 0.0);
 }
 
+// Test mouse button initialization
+TEST_CASE(TestMouseButtonInit) {
+    InputHandler input;
+    
+    // All mouse buttons should be released initially
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT));
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT));
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE));
+    
+    // Out of range buttons should return false
+    ASSERT_FALSE(input.IsMouseButtonDown(-1));
+    ASSERT_FALSE(input.IsMouseButtonDown(100));
+}
+
+// Test mouse button press
+TEST_CASE(TestMouseButtonPress) {
+    InputHandler input;
+    
+    // Simulate left button press
+    input.OnMouseButton(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+    ASSERT_TRUE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT));
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT));
+    
+    // Simulate left button release
+    input.OnMouseButton(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, 0);
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT));
+}
+
+// Test multiple mouse buttons
+TEST_CASE(TestMultipleMouseButtons) {
+    InputHandler input;
+    
+    // Press left and right buttons
+    input.OnMouseButton(GLFW_MOUSE_BUTTON_LEFT, GLFW_PRESS, 0);
+    input.OnMouseButton(GLFW_MOUSE_BUTTON_RIGHT, GLFW_PRESS, 0);
+    
+    ASSERT_TRUE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT));
+    ASSERT_TRUE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT));
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_MIDDLE));
+    
+    // Release left button
+    input.OnMouseButton(GLFW_MOUSE_BUTTON_LEFT, GLFW_RELEASE, 0);
+    ASSERT_FALSE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT));
+    ASSERT_TRUE(input.IsMouseButtonDown(GLFW_MOUSE_BUTTON_RIGHT));
+}
+
 TEST_MAIN()

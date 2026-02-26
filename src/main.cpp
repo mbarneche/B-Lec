@@ -1,6 +1,6 @@
 // main.cpp
 // Entry point for B-Lec game prototype
-// Integrates window management, input handling, 3D rendering, block system, and debug overlay
+// Integrates window management, input handling, 3D rendering, block system, debug overlay, and UI
 
 #include "window/window_manager.h"
 #include "input/input_handler.h"
@@ -10,6 +10,7 @@
 #include "render/mesh.h"
 #include "debug/debug_overlay.h"
 #include "world/block_system.h"
+#include "ui/ui_manager.h"
 
 #include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
@@ -42,6 +43,7 @@ int main() {
     blec::render::BitmapFont font;
     blec::render::Camera camera;
     blec::debug::DebugOverlay debug_overlay;
+    blec::ui::UIManager ui_manager;
 
     // Initialize GLFW and create window
     if (!window_manager.InitializeGLFW()) {
@@ -57,6 +59,9 @@ int main() {
 
     // Initialize renderer
     renderer.Initialize();
+
+    // Initialize UI manager with window dimensions
+    ui_manager.Initialize(kWindowWidth, kWindowHeight);
 
     // Initialize camera
     camera.Initialize(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));
@@ -79,8 +84,9 @@ int main() {
     using clock = std::chrono::steady_clock;
     auto last_frame_time = clock::now();
 
-    // Static for toggle state
+    // Static for toggle states
     static bool f12_was_down = false;
+    static bool esc_was_down = false;
 
     // Main game loop
     while (!window_manager.ShouldClose()) {
@@ -93,9 +99,44 @@ int main() {
         // Poll for events
         window_manager.PollEvents();
 
-        // Check for ESC key to close window
+        // Handle ESC key to toggle pause (press detection)
         if (input_handler.IsKeyDown(GLFW_KEY_ESCAPE)) {
-            window_manager.SetShouldClose(true);
+            if (!esc_was_down) {
+                ui_manager.TogglePause();
+                esc_was_down = true;
+            }
+        } else {
+            esc_was_down = false;
+        }
+
+        // Update mouse lock state based on pause state
+        GLFWwindow* window_handle = window_manager.GetHandle();
+        if (ui_manager.IsPaused()) {
+            // Unlock mouse when paused
+            glfwSetInputMode(window_handle, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        } else {
+            // Lock mouse to window center when playing
+            glfwSetInputMode(window_handle, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        }
+
+        // Handle pause menu interactions (mouse clicks)
+        if (ui_manager.IsPaused()) {
+            // Get mouse position in screen coordinates
+            double mouse_x = 0.0;
+            double mouse_y = 0.0;
+            glfwGetCursorPos(window_handle, &mouse_x, &mouse_y);
+            
+            // Check for mouse click
+            if (input_handler.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+                auto action = ui_manager.HandleMouseClick(static_cast<float>(mouse_x), 
+                                                          static_cast<float>(mouse_y));
+                
+                if (action == blec::ui::UIManager::ButtonAction::Resume) {
+                    ui_manager.TogglePause();
+                } else if (action == blec::ui::UIManager::ButtonAction::Quit) {
+                    window_manager.SetShouldClose(true);
+                }
+            }
         }
 
         // Toggle debug overlay with F12 (press detection)
@@ -108,34 +149,37 @@ int main() {
             f12_was_down = false;
         }
 
-        // Handle camera movement (WASD keys)
-        if (input_handler.IsKeyDown(GLFW_KEY_W)) {
-            camera.MoveForward(static_cast<float>(delta_time * 5.0));
-        }
-        if (input_handler.IsKeyDown(GLFW_KEY_S)) {
-            camera.MoveForward(static_cast<float>(-delta_time * 5.0));
-        }
-        if (input_handler.IsKeyDown(GLFW_KEY_A)) {
-            camera.MoveRight(static_cast<float>(-delta_time * 5.0));
-        }
-        if (input_handler.IsKeyDown(GLFW_KEY_D)) {
-            camera.MoveRight(static_cast<float>(delta_time * 5.0));
-        }
-        if (input_handler.IsKeyDown(GLFW_KEY_SPACE)) {
-            camera.MoveUp(static_cast<float>(delta_time * 5.0));
-        }
-        if (input_handler.IsKeyDown(GLFW_KEY_LEFT_CONTROL)) {
-            camera.MoveUp(static_cast<float>(-delta_time * 5.0));
-        }
+        // Handle camera and gameplay only when not paused
+        if (!ui_manager.IsPaused()) {
+            // Handle camera movement (WASD keys)
+            if (input_handler.IsKeyDown(GLFW_KEY_W) || input_handler.IsKeyDown(GLFW_KEY_UP)) {
+                camera.MoveForward(static_cast<float>(delta_time * 5.0));
+            }
+            if (input_handler.IsKeyDown(GLFW_KEY_S) || input_handler.IsKeyDown(GLFW_KEY_DOWN)) {
+                camera.MoveForward(static_cast<float>(-delta_time * 5.0));
+            }
+            if (input_handler.IsKeyDown(GLFW_KEY_A) || input_handler.IsKeyDown(GLFW_KEY_LEFT)) {
+                camera.MoveRight(static_cast<float>(-delta_time * 5.0));
+            }
+            if (input_handler.IsKeyDown(GLFW_KEY_D) || input_handler.IsKeyDown(GLFW_KEY_RIGHT)) {
+                camera.MoveRight(static_cast<float>(delta_time * 5.0));
+            }
+            if (input_handler.IsKeyDown(GLFW_KEY_SPACE)) {
+                camera.MoveUp(static_cast<float>(delta_time * 5.0));
+            }
+            if (input_handler.IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
+                camera.MoveUp(static_cast<float>(-delta_time * 5.0));
+            }
 
-        // Handle camera rotation (mouse look)
-        double mouse_dx = 0.0;
-        double mouse_dy = 0.0;
-        input_handler.GetMouseLookDelta(&mouse_dx, &mouse_dy);
+            // Handle camera rotation (mouse look)
+            double mouse_dx = 0.0;
+            double mouse_dy = 0.0;
+            input_handler.GetMouseLookDelta(&mouse_dx, &mouse_dy);
 
-        // Some mice might be inverted, standard is positive Y = look up
-        camera.Yaw(static_cast<float>(mouse_dx * 0.005f));
-        camera.Pitch(static_cast<float>(-mouse_dy * 0.005f));  // Inverted for natural look
+            // Some mice might be inverted, standard is positive Y = look up
+            camera.Yaw(static_cast<float>(mouse_dx * 0.005f));
+            camera.Pitch(static_cast<float>(-mouse_dy * 0.005f));  // Inverted for natural look
+        }
 
         // Update camera and debug overlay
         camera.Update(delta_time);
@@ -193,6 +237,12 @@ int main() {
 
         // ===== RENDER 2D OVERLAY =====
         renderer.Begin2D(fb_width, fb_height);
+
+        // Render crosshair (always visible)
+        ui_manager.RenderCrosshair(renderer);
+
+        // Render pause menu (only when paused)
+        ui_manager.RenderPauseMenu(renderer, font);
 
         // Render debug overlay if visible
         if (debug_overlay.IsVisible()) {

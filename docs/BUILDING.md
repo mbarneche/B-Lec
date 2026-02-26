@@ -104,7 +104,7 @@ See [code_testing/README.md](code_testing/README.md) for detailed testing inform
 
 ### General
 - F12: Toggle debug overlay
-- ESC: Exit
+- ESC: Toggle pause menu (unlocks mouse, shows Resume/Quit buttons)
 
 ### 3D Controls (Camera)
 - W: Move forward
@@ -135,6 +135,13 @@ Manages the voxel game world and optimization:
 - `BlockSystem`: 3D voxel grid with block storage and queries
 - **Frustum Culling**: Automatically determines which blocks are visible in the camera's view to optimize rendering
 - Configurable grid dimensions and block sizes
+
+### UI Module
+Manages user interface and game state:
+- `UIManager`: Crosshair, pause menu, and mouse lock management
+- **Crosshair**: Always-visible crosshair in screen center for aiming
+- **Pause Menu**: ESC-toggleable menu with Resume and Quit buttons
+- **Mouse Lock**: Automatic cursor locking during gameplay for seamless camera control
 
 ### Debug Module
 Displays comprehensive real-time debug information including:

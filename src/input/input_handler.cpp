@@ -23,8 +23,15 @@ static void CursorPosCallbackWrapper(GLFWwindow*, double xpos, double ypos) {
     }
 }
 
+static void MouseButtonCallbackWrapper(GLFWwindow*, int button, int action, int mods) {
+    if (g_input_handler) {
+        g_input_handler->OnMouseButton(button, action, mods);
+    }
+}
+
 InputHandler::InputHandler()
     : key_down_{}
+    , mouse_button_down_{}
     , last_key_event_()
     , mouse_x_(0.0)
     , mouse_y_(0.0)
@@ -37,11 +44,20 @@ void InputHandler::RegisterCallbacks(GLFWwindow* window) {
     g_input_handler = this;
     glfwSetKeyCallback(window, KeyCallbackWrapper);
     glfwSetCursorPosCallback(window, CursorPosCallbackWrapper);
+    glfwSetMouseButtonCallback(window, MouseButtonCallbackWrapper);
 }
 
 bool InputHandler::IsKeyDown(int key) const {
     if (key >= 0 && key < static_cast<int>(key_down_.size())) {
         return key_down_[key];
+    }
+    return false;
+}
+
+bool InputHandler::IsMouseButtonDown(int button) const {
+    // GLFW mouse buttons are numbered 0-7
+    if (button >= 0 && button < static_cast<int>(mouse_button_down_.size())) {
+        return mouse_button_down_[button];
     }
     return false;
 }
@@ -159,6 +175,17 @@ void InputHandler::OnCursorPos(double xpos, double ypos) {
 
     mouse_x_ = xpos;
     mouse_y_ = ypos;
+}
+
+void InputHandler::OnMouseButton(int button, int action, int) {
+    // Update mouse button state
+    if (button >= 0 && button < static_cast<int>(mouse_button_down_.size())) {
+        if (action == GLFW_PRESS) {
+            mouse_button_down_[button] = true;
+        } else if (action == GLFW_RELEASE) {
+            mouse_button_down_[button] = false;
+        }
+    }
 }
 
 } // namespace input

@@ -14,6 +14,7 @@ set(TEST_SOURCES
     render/test_renderer_3d.cpp
     debug/test_debug_overlay.cpp
     world/test_block_system.cpp
+    ui/test_ui_manager.cpp
 )
 
 # Build each test as a separate executable
@@ -32,6 +33,7 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
         ../src/render/mesh.cpp
         ../src/debug/debug_overlay.cpp
         ../src/world/block_system.cpp
+        ../src/ui/ui_manager.cpp
     )
     
     # Include directories

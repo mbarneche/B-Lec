@@ -26,6 +26,10 @@ public:
     // Check if a specific key is currently pressed
     bool IsKeyDown(int key) const;
 
+    // Check if a specific mouse button is currently pressed
+    // button: GLFW_MOUSE_BUTTON_LEFT, GLFW_MOUSE_BUTTON_RIGHT, etc.
+    bool IsMouseButtonDown(int button) const;
+
     // Get a human-readable name for a key code
     static std::string GetKeyName(int key);
 
@@ -54,10 +58,14 @@ public:
     // GLFW callback handlers (called by GLFW via static wrappers)
     void OnKey(int key, int scancode, int action, int mods);
     void OnCursorPos(double xpos, double ypos);
+    void OnMouseButton(int button, int action, int mods);
 
 private:
     // Key state array (true = pressed, false = released)
     std::array<bool, 348> key_down_; // GLFW_KEY_LAST + 1
+
+    // Mouse button state array (true = pressed, false = released)
+    std::array<bool, 8> mouse_button_down_; // GLFW_MOUSE_BUTTON_LAST + 1
 
     // Last recorded key event
     std::string last_key_event_;

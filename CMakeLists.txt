@@ -41,6 +41,7 @@ add_executable(blec
     src/render/camera.cpp
     src/debug/debug_overlay.cpp
     src/world/block_system.cpp
+    src/ui/ui_manager.cpp
 )
 
 # Include directories for headers

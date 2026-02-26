@@ -54,6 +54,10 @@ public:
     // Used for 2D UI and overlays
     static void DrawFilledRect(float x, float y, float w, float h);
 
+    // Draw a line from (x1, y1) to (x2, y2)
+    // Color is set via SetColor() before calling
+    static void DrawLine(float x1, float y1, float x2, float y2);
+
     // Set the current drawing color (RGBA, 0-1 range)
     static void SetColor(float r, float g, float b, float a);
 
