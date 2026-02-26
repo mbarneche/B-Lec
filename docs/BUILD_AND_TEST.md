@@ -46,13 +46,11 @@ Choose the method for your platform:
 # Install vcpkg if you don't have it
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
-.\vcpkg\integrate install
-.\vcpkg integrate msvc
+.\bootstrap-vcpkg.bat
+.\vcpkg integrate install
 
 # Install dependencies
-.\vcpkg install glfw3:x64-windows
-.\vcpkg install glm:x64-windows
-.\vcpkg install glad:x64-windows
+.\vcpkg install glfw3:x64-windows glm:x64-windows glad:x64-windows
 ```
 
 #### **Windows (Option B: Manual Download)**
