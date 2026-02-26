@@ -14,13 +14,29 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 find_package(OpenGL REQUIRED)
 
 # GLFW
-if(NOT TARGET glfw)
-    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glfw)
+set(GLFW_TARGET glfw)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glfw/CMakeLists.txt)
+    if(NOT TARGET glfw)
+        add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glfw)
+    endif()
+else()
+    find_package(glfw3 REQUIRED)
+    if(TARGET glfw)
+        set(GLFW_TARGET glfw)
+    elseif(TARGET glfw3)
+        set(GLFW_TARGET glfw3)
+    endif()
 endif()
 
 # GLM (header-only)
-add_library(glm INTERFACE)
-target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glm)
+set(GLM_TARGET glm)
+if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glm)
+    add_library(glm INTERFACE)
+    target_include_directories(glm INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/ElectricitySimulator/external/glm)
+else()
+    find_package(glm CONFIG REQUIRED)
+    set(GLM_TARGET glm::glm)
+endif()
 
 # Main executable
 add_executable(blec 
@@ -48,9 +64,9 @@ target_include_directories(blec PRIVATE
 
 # Link libraries
 target_link_libraries(blec PRIVATE
-    glfw
+    ${GLFW_TARGET}
     OpenGL::GL
-    glm
+    ${GLM_TARGET}
 )
 
 # Platform-specific settings
