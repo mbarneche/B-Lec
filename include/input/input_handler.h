@@ -44,7 +44,11 @@ public:
     // Get mouse delta (movement since last frame)
     void GetMouseDelta(double* dx, double* dy) const;
 
-    // Reset mouse delta (call once per frame)
+    // Get raw mouse movement for camera look control
+    // Same as GetMouseDelta but typically used for FPS camera
+    void GetMouseLookDelta(double* dx, double* dy) const;
+
+    // Reset mouse delta (call once per frame after using it)
     void ResetMouseDelta();
 
     // GLFW callback handlers (called by GLFW via static wrappers)

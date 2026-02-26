@@ -7,6 +7,7 @@
 
 #include <string>
 #include <vector>
+#include <cstdint>
 
 namespace blec {
 namespace input {
@@ -49,6 +50,13 @@ public:
     // Get current FPS
     double GetFPS() const { return fps_; }
 
+    // Set camera information
+    void SetCameraPosition(float x, float y, float z);
+    void SetCameraOrientation(float yaw, float pitch);
+
+    // Set block system information
+    void SetBlockCounts(uint32_t total_blocks, uint32_t visible_blocks);
+
 private:
     // Build text lines for display
     std::vector<std::string> BuildDebugLines(const input::InputHandler& input) const;
@@ -58,6 +66,14 @@ private:
     double fps_;
     double frame_accumulator_;
     int frame_count_;
+
+    // Camera information
+    float camera_x_, camera_y_, camera_z_;
+    float camera_yaw_, camera_pitch_;
+
+    // Block information
+    uint32_t total_blocks_;
+    uint32_t visible_blocks_;
 
     // Error and warning tracking
     int error_count_;

@@ -1,14 +1,19 @@
 // main.cpp
 // Entry point for B-Lec game prototype
-// Integrates window management, input handling, rendering, and debug overlay
+// Integrates window management, input handling, 3D rendering, block system, and debug overlay
 
 #include "window/window_manager.h"
 #include "input/input_handler.h"
 #include "render/renderer.h"
 #include "render/font.h"
+#include "render/camera.h"
+#include "render/mesh.h"
 #include "debug/debug_overlay.h"
+#include "world/block_system.h"
 
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <chrono>
 #include <cstdio>
 
@@ -35,6 +40,7 @@ int main() {
     blec::input::InputHandler input_handler;
     blec::render::Renderer renderer;
     blec::render::BitmapFont font;
+    blec::render::Camera camera;
     blec::debug::DebugOverlay debug_overlay;
 
     // Initialize GLFW and create window
@@ -52,12 +58,29 @@ int main() {
     // Initialize renderer
     renderer.Initialize();
 
+    // Initialize camera
+    camera.Initialize(glm::vec3(0.0f, 0.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    camera.SetMovementSpeed(5.0f);  // 5 units per second
+    camera.SetRotationSpeed(0.005f); // radians per pixel
+
+    // Create cube mesh
+    blec::render::Mesh cube = blec::render::Mesh::CreateCube();
+    cube.SetBackfaceCulling(true);  // Only render front-facing faces
+
+    // Initialize block system
+    blec::world::BlockSystem block_system;
+    block_system.Initialize(32, 32, 32, 1.0f);  // 32x32x32 grid with 1 unit blocks
+    block_system.CreateTestBlocks();  // Create initial test block cube at center
+
     // Register input callbacks
     input_handler.RegisterCallbacks(window_manager.GetHandle());
 
     // Main loop timing
     using clock = std::chrono::steady_clock;
     auto last_frame_time = clock::now();
+
+    // Static for toggle state
+    static bool f12_was_down = false;
 
     // Main game loop
     while (!window_manager.ShouldClose()) {
@@ -75,21 +98,47 @@ int main() {
             window_manager.SetShouldClose(true);
         }
 
-        // Toggle debug overlay with F12
+        // Toggle debug overlay with F12 (press detection)
         if (input_handler.IsKeyDown(GLFW_KEY_F12)) {
-            // Note: This will toggle every frame while held
-            // Could add press/release tracking if needed
-            static bool f12_was_down = false;
             if (!f12_was_down) {
                 debug_overlay.Toggle();
                 f12_was_down = true;
             }
         } else {
-            static bool f12_was_down = false;
             f12_was_down = false;
         }
 
-        // Update debug overlay
+        // Handle camera movement (WASD keys)
+        if (input_handler.IsKeyDown(GLFW_KEY_W)) {
+            camera.MoveForward(static_cast<float>(delta_time * 5.0));
+        }
+        if (input_handler.IsKeyDown(GLFW_KEY_S)) {
+            camera.MoveForward(static_cast<float>(-delta_time * 5.0));
+        }
+        if (input_handler.IsKeyDown(GLFW_KEY_A)) {
+            camera.MoveRight(static_cast<float>(-delta_time * 5.0));
+        }
+        if (input_handler.IsKeyDown(GLFW_KEY_D)) {
+            camera.MoveRight(static_cast<float>(delta_time * 5.0));
+        }
+        if (input_handler.IsKeyDown(GLFW_KEY_SPACE)) {
+            camera.MoveUp(static_cast<float>(delta_time * 5.0));
+        }
+        if (input_handler.IsKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+            camera.MoveUp(static_cast<float>(-delta_time * 5.0));
+        }
+
+        // Handle camera rotation (mouse look)
+        double mouse_dx = 0.0;
+        double mouse_dy = 0.0;
+        input_handler.GetMouseLookDelta(&mouse_dx, &mouse_dy);
+
+        // Some mice might be inverted, standard is positive Y = look up
+        camera.Yaw(static_cast<float>(mouse_dx * 0.005f));
+        camera.Pitch(static_cast<float>(-mouse_dy * 0.005f));  // Inverted for natural look
+
+        // Update camera and debug overlay
+        camera.Update(delta_time);
         debug_overlay.Update(input_handler, delta_time);
 
         // Get framebuffer size for rendering
@@ -99,12 +148,58 @@ int main() {
 
         // Set viewport and clear screen
         renderer.SetViewport(fb_width, fb_height);
-        renderer.Clear(0.08f, 0.1f, 0.12f, 1.0f); // Dark blue-gray background
+        renderer.Clear(0.1f, 0.15f, 0.2f, 1.0f); // Dark blue background
+
+        // ===== UPDATE BLOCK SYSTEM =====
+        // Create projection matrix for frustum extraction
+        glm::mat4 projection = glm::perspective(glm::radians(45.0f),
+                                                static_cast<float>(fb_width) / fb_height,
+                                                0.1f, 100.0f);
+        glm::mat4 view = camera.GetViewMatrix();
+
+        // Extract camera frustum and update block visibility
+        block_system.ExtractFrustum(view, projection);
+        block_system.UpdateVisibility();
+
+        // Update debug overlay with camera and block information
+        glm::vec3 cam_pos = camera.GetPosition();
+        debug_overlay.SetCameraPosition(cam_pos.x, cam_pos.y, cam_pos.z);
+        debug_overlay.SetCameraOrientation(camera.GetYaw(), camera.GetPitch());
+        
+        // Set block counts
+        debug_overlay.SetBlockCounts(block_system.GetTotalBlockCount(),
+                                     block_system.GetVisibleBlockCount());
+
+        // ===== RENDER 3D SCENE =====
+        renderer.Begin3D(fb_width, fb_height, 45.0f);
+
+        // Set view matrix from camera
+        renderer.SetView(view);
+
+        // Render cube at origin
+        glm::mat4 model = glm::mat4(1.0f);  // Identity matrix (cube at origin)
+        renderer.SetModel(model);
+
+        // Enable back-face culling
+        renderer.EnableBackfaceCulling();
+
+        // Render the cube
+        cube.Render();
+
+        // Disable back-face culling before 2D
+        renderer.DisableBackfaceCulling();
+
+        renderer.End3D();
+
+        // ===== RENDER 2D OVERLAY =====
+        renderer.Begin2D(fb_width, fb_height);
 
         // Render debug overlay if visible
         if (debug_overlay.IsVisible()) {
             debug_overlay.Render(fb_width, fb_height, font, input_handler);
         }
+
+        renderer.End2D();
 
         // Swap buffers to display rendered frame
         window_manager.SwapBuffers();

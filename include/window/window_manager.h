@@ -23,6 +23,7 @@ public:
 
     // Create a window with the specified dimensions and title
     // Returns true on success, false on failure
+    // The window will have a depth buffer for 3D rendering
     bool CreateWindow(int width, int height, const char* title);
 
     // Make the window's OpenGL context current

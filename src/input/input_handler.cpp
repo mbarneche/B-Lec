@@ -123,6 +123,11 @@ void InputHandler::GetMouseDelta(double* dx, double* dy) const {
     if (dy) *dy = mouse_dy_;
 }
 
+void InputHandler::GetMouseLookDelta(double* dx, double* dy) const {
+    // Same as GetMouseDelta, but semantically for camera look
+    GetMouseDelta(dx, dy);
+}
+
 void InputHandler::ResetMouseDelta() {
     mouse_dx_ = 0.0;
     mouse_dy_ = 0.0;

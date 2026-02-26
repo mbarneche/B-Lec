@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 4.2)
 
 project(BLecPrototype LANGUAGES CXX)
 
@@ -10,16 +10,23 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 include(FetchContent)
 
+# GLFW for window and input management
 FetchContent_Declare(
     glfw
     URL https://github.com/glfw/glfw/releases/download/3.4/glfw-3.4.zip
+)
+
+# GLM for mathematics (header-only, no build needed)
+FetchContent_Declare(
+    glm
+    URL https://github.com/g-truc/glm/releases/download/1.0.2/glm-1.0.2.zip
 )
 
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-FetchContent_MakeAvailable(glfw)
+FetchContent_MakeAvailable(glfw glm)
 
 find_package(OpenGL REQUIRED)
 
@@ -30,12 +37,16 @@ add_executable(blec
     src/input/input_handler.cpp
     src/render/renderer.cpp
     src/render/font.cpp
+    src/render/mesh.cpp
+    src/render/camera.cpp
     src/debug/debug_overlay.cpp
+    src/world/block_system.cpp
 )
 
 # Include directories for headers
 target_include_directories(blec PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${glm_SOURCE_DIR}
 )
 
 target_link_libraries(blec PRIVATE glfw OpenGL::GL)

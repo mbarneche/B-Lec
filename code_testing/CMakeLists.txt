@@ -9,7 +9,11 @@ set(TEST_SOURCES
     input/test_input_handler.cpp
     render/test_font.cpp
     render/test_renderer.cpp
+    render/test_camera.cpp
+    render/test_mesh.cpp
+    render/test_renderer_3d.cpp
     debug/test_debug_overlay.cpp
+    world/test_block_system.cpp
 )
 
 # Build each test as a separate executable
@@ -24,13 +28,17 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
         ../src/input/input_handler.cpp
         ../src/render/renderer.cpp
         ../src/render/font.cpp
+        ../src/render/camera.cpp
+        ../src/render/mesh.cpp
         ../src/debug/debug_overlay.cpp
+        ../src/world/block_system.cpp
     )
     
     # Include directories
     target_include_directories(${TEST_NAME} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../include
+        ${glm_SOURCE_DIR}
     )
     
     # Link libraries

@@ -38,6 +38,9 @@ bool WindowManager::CreateWindow(int width, int height, const char* title) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
+    // Request a depth buffer for 3D rendering
+    glfwWindowHint(GLFW_DEPTH_BITS, 24);
+
     window_ = glfwCreateWindow(width, height, title, nullptr, nullptr);
     if (!window_) {
         std::fprintf(stderr, "Failed to create GLFW window\n");

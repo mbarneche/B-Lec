@@ -227,7 +227,404 @@ set(TEST_SOURCES
 
 6. **Integrate in main.cpp** if needed
 
+## Working with 3D Rendering
+
+### Understanding the 3D Pipeline
+
+The render module now supports 3D graphics with camera, mesh, and matrix operations:
+
+1. **Camera** (`camera.h`): Manages viewpoint and controls
+2. **Mesh** (`mesh.h`): Stores geometry and renders 3D objects
+3. **Renderer** 3D methods: Perspective projection and state management
+
+### Using the Camera Class
+
+**Basic setup**:
+```cpp
+#include "render/camera.h"
+
+blec::render::Camera camera;
+
+// Initialize with position and target
+camera.Initialize(glm::vec3(0.0f, 0.0f, 5.0f),  // Camera position
+                  glm::vec3(0.0f, 0.0f, 0.0f));  // Look-at target
+
+// Configure speeds (optional, have sensible defaults)
+camera.SetMovementSpeed(5.0f);      // Units per second
+camera.SetRotationSpeed(0.005f);    // Radians per pixel
+```
+
+**Handle input in main loop**:
+```cpp
+// WASD movement
+if (input_handler.IsKeyDown(GLFW_KEY_W)) {
+    camera.MoveForward(delta_time * 5.0);
+}
+if (input_handler.IsKeyDown(GLFW_KEY_S)) {
+    camera.MoveForward(-delta_time * 5.0);
+}
+if (input_handler.IsKeyDown(GLFW_KEY_A)) {
+    camera.MoveRight(-delta_time * 5.0);
+}
+if (input_handler.IsKeyDown(GLFW_KEY_D)) {
+    camera.MoveRight(delta_time * 5.0);
+}
+
+// Space/Ctrl for up/down
+if (input_handler.IsKeyDown(GLFW_KEY_SPACE)) {
+    camera.MoveUp(delta_time * 5.0);
+}
+if (input_handler.IsKeyDown(GLFW_KEY_LEFT_CONTROL)) {
+    camera.MoveUp(-delta_time * 5.0);
+}
+
+// Mouse look
+double mouse_dx = 0.0, mouse_dy = 0.0;
+input_handler.GetMouseLookDelta(&mouse_dx, &mouse_dy);
+camera.Yaw(mouse_dx * 0.005f);
+camera.Pitch(-mouse_dy * 0.005f);  // Inverted Y for natural look
+
+// Update camera state
+camera.Update(delta_time);
+```
+
+**Get camera matrices for rendering**:
+```cpp
+glm::mat4 view = camera.GetViewMatrix();
+renderer.SetView(view);
+```
+
+### Using the Mesh Class
+
+**Create a colored cube**:
+```cpp
+#include "render/mesh.h"
+
+// Create a cube with 6 different colored faces
+blec::render::Mesh cube = blec::render::Mesh::CreateCube();
+
+// Enable back-face culling for optimization
+cube.SetBackfaceCulling(true);
+```
+
+**Render a mesh**:
+```cpp
+// In render loop:
+renderer.Begin3D(window_width, window_height, 45.0f);  // 45° FOV
+
+// Set up matrices
+glm::mat4 view = camera.GetViewMatrix();
+renderer.SetView(view);
+
+glm::mat4 model = glm::mat4(1.0f);  // Identity = object at origin
+renderer.SetModel(model);
+
+// Enable features
+renderer.EnableDepthTest();
+renderer.EnableBackfaceCulling();
+
+// Render the geometry
+cube.Render();
+
+renderer.DisableBackfaceCulling();
+renderer.End3D();
+```
+
+### Complete 3D Rendering Loop Example
+
+```cpp
+#include "render/camera.h"
+#include "render/mesh.h"
+
+// Setup phase
+blec::render::Camera camera;
+camera.Initialize(glm::vec3(0.0f, 0.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+
+blec::render::Mesh cube = blec::render::Mesh::CreateCube();
+cube.SetBackfaceCulling(true);
+
+// Main loop
+while (!window_manager.ShouldClose()) {
+    // ... input handling (see above) ...
+    
+    // Update camera
+    camera.Update(delta_time);
+    
+    // Render 3D scene
+    renderer.Begin3D(fb_width, fb_height, 45.0f);
+    
+    renderer.SetView(camera.GetViewMatrix());
+    
+    // Render cube
+    glm::mat4 cube_model = glm::mat4(1.0f);
+    renderer.SetModel(cube_model);
+    renderer.EnableDepthTest();
+    renderer.EnableBackfaceCulling();
+    cube.Render();
+    
+    renderer.End3D();
+    
+    // Render 2D overlay on top
+    renderer.Begin2D(fb_width, fb_height);
+    // ... render debug overlay, HUD, etc ...
+    renderer.End2D();
+    
+    window_manager.SwapBuffers();
+    input_handler.ResetMouseDelta();
+}
+```
+
+### 3D Rendering Tips
+
+**Coordinate System**:
+- X-axis: Points to the right
+- Y-axis: Points up
+- Z-axis: Points towards the camera (right-hand rule)
+
+**Camera Movement**:
+- Use `MoveForward()` for depth (along view direction)
+- Use `MoveRight()` for lateral movement (strafe)
+- Use `MoveUp()` for vertical movement
+- Use `Yaw()` to rotate left/right
+- Use `Pitch()` to look up/down
+
+**Mesh Colors**:
+The default cube has 6 faces with different colors:
+- Front (Z+): Red
+- Back (Z-): Green
+- Right (X+): Blue
+- Left (X-): Yellow
+- Top (Y+): Cyan
+- Bottom (Y-): Magenta
+
+**Performance**:
+- Always enable `EnableBackfaceCulling()` to skip rendering hidden faces
+- Enable `EnableDepthTest()` so objects render in correct order
+- Disable culling/depth before rendering 2D overlay
+
+**Common Issues**:
+- **White/blank screen**: Check camera position isn't inside the cube
+- **Inverted controls**: Change sign of mouse delta in Pitch
+- **Flickering**: Check depth test is enabled before rendering 3D
+- **Objects disappear**: Check near/far planes in Begin3D FOV range objects
+
+## Working with BlockSystem
+
+### Understanding the Voxel Grid
+
+The `BlockSystem` manages a 3D voxel grid where each voxel (block) can be air (empty) or solid. It includes frustum culling to efficiently determine which blocks are visible from the camera's perspective.
+
+**Key concepts**:
+- **Block**: A single voxel with a type (0 = air, 1+ = solid types)
+- **Grid**: 3D array of blocks with configurable dimensions
+- **AABB**: Axis-aligned bounding box for each block
+- **Frustum**: 6-plane view frustum extracted from camera matrices
+- **Visibility**: Blocks that intersect the view frustum
+
+### Basic Setup
+
+**Initialize the block system**:
+```cpp
+#include "world/block_system.h"
+
+blec::world::BlockSystem block_system;
+
+// Initialize with grid dimensions and block size
+block_system.Initialize(32,    // Width (X)
+                        32,    // Height (Y)
+                        32,    // Depth (Z)
+                        1.0f); // Block size in world units
+```
+
+**Create some test blocks**:
+```cpp
+// Creates a 3×3×3 cube of solid blocks at the grid center
+block_system.CreateTestBlocks();
+
+// Get block counts
+int total = block_system.GetTotalBlockCount();      // Non-air blocks
+int visible = block_system.GetVisibleBlockCount();  // Blocks in frustum
+```
+
+### Working with Individual Blocks
+
+**Get and set blocks**:
+```cpp
+// Set a block (returns true if successful)
+bool success = block_system.SetBlock(10, 5, 10, 1);  // Set solid block at (10,5,10)
+
+// Get block type
+uint8_t block_type = block_system.GetBlock(10, 5, 10);
+if (block_type == 0) {
+    // It's air
+} else {
+    // It's a solid block
+}
+
+// Check if position is valid
+if (x >= 0 && x < 32 && y >= 0 && y < 32 && z >= 0 && z < 32) {
+    // Position is within bounds
+}
+```
+
+**Convert between grid and world coordinates**:
+```cpp
+// Get world-space position of a block's center
+glm::vec3 world_pos = block_system.GetBlockWorldPosition(10, 5, 10);
+
+// Get bounding box of a block
+blec::world::AABB bbox = block_system.GetBlockAABB(10, 5, 10);
+// bbox.min and bbox.max are glm::vec3
+```
+
+### Frustum Culling
+
+**Update visibility each frame**:
+```cpp
+// In your main loop:
+
+// 1. Create projection matrix
+int fb_width, fb_height;
+window_manager.GetFramebufferSize(&fb_width, &fb_height);
+float aspect = static_cast<float>(fb_width) / fb_height;
+glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+
+// 2. Get view matrix from camera
+glm::mat4 view = camera.GetViewMatrix();
+
+// 3. Extract frustum from matrices
+block_system.ExtractFrustum(view, projection);
+
+// 4. Update which blocks are visible
+block_system.UpdateVisibility();
+
+// 5. Query results
+int total_blocks = block_system.GetTotalBlockCount();
+int visible_blocks = block_system.GetVisibleBlockCount();
+```
+
+**Pass data to debug overlay**:
+```cpp
+debug_overlay.SetBlockCounts(total_blocks, visible_blocks);
+```
+
+### Complete Example
+
+```cpp
+#include "world/block_system.h"
+#include "render/camera.h"
+
+// Setup phase
+blec::world::BlockSystem block_system;
+block_system.Initialize(32, 32, 32, 1.0f);
+block_system.CreateTestBlocks();
+
+blec::render::Camera camera;
+camera.Initialize(glm::vec3(0.0f, 15.0f, 30.0f), glm::vec3(16.0f, 16.0f, 16.0f));
+
+// Main loop
+while (!window_manager.ShouldClose()) {
+    // ... handle input and update camera ...
+    
+    // Update frustum and visibility
+    int fb_width, fb_height;
+    window_manager.GetFramebufferSize(&fb_width, &fb_height);
+    float aspect = static_cast<float>(fb_width) / fb_height;
+    
+    glm::mat4 projection = glm::perspective(glm::radians(45.0f), aspect, 0.1f, 100.0f);
+    glm::mat4 view = camera.GetViewMatrix();
+    
+    block_system.ExtractFrustum(view, projection);
+    block_system.UpdateVisibility();
+    
+    // Update debug info
+    glm::vec3 cam_pos = camera.GetPosition();
+    debug_overlay.SetCameraPosition(cam_pos.x, cam_pos.y, cam_pos.z);
+    debug_overlay.SetCameraOrientation(camera.GetYaw(), camera.GetPitch());
+    debug_overlay.SetBlockCounts(
+        block_system.GetTotalBlockCount(),
+        block_system.GetVisibleBlockCount()
+    );
+    
+    // ... rendering ...
+}
+```
+
+### Performance Characteristics
+
+**Time Complexity**:
+- `GetBlock()/SetBlock()`: O(1) - Direct array access
+- `ExtractFrustum()`: O(1) - Matrix operations and plane extraction
+- `UpdateVisibility()`: O(N) where N = total non-air blocks
+- `GetBlockAABB()`: O(1) - Simple coordinate math
+
+**Memory Usage**:
+- Grid storage: width × height × depth bytes (1 byte per block)
+- Example: 32×32×32 grid = 32,768 bytes (~32 KB)
+
+**Optimization Tips**:
+- Only call `UpdateVisibility()` when camera moves or blocks change
+- Grid dimensions should be powers of 2 for cache efficiency
+- Test blocks are positioned at grid center, ensuring they're visible from default camera position
+
+### Common Patterns
+
+**Building structures**:
+```cpp
+// Create a floor
+for (int x = 0; x < 32; x++) {
+    for (int z = 0; z < 32; z++) {
+        block_system.SetBlock(x, 0, z, 1);  // Solid block at y=0
+    }
+}
+
+// Create a wall
+for (int y = 0; y < 10; y++) {
+    for (int x = 0; x < 32; x++) {
+        block_system.SetBlock(x, y, 0, 1);  // Wall at z=0
+    }
+}
+```
+
+**Checking visibility before rendering**:
+```cpp
+for (int z = 0; z < 32; z++) {
+    for (int y = 0; y < 32; y++) {
+        for (int x = 0; x < 32; x++) {
+            uint8_t block = block_system.GetBlock(x, y, z);
+            if (block == 0) continue;  // Skip air
+            
+            // Get world position and AABB
+            glm::vec3 pos = block_system.GetBlockWorldPosition(x, y, z);
+            blec::world::AABB bbox = block_system.GetBlockAABB(x, y, z);
+            
+            // Only render if visible (already filtered by UpdateVisibility)
+            // Your rendering code here...
+        }
+    }
+}
+```
+
+### Troubleshooting
+
+**No blocks visible**:
+- Check camera position isn't too far from blocks
+- Verify frustum near/far planes encompass block positions
+- Ensure `UpdateVisibility()` is called after `ExtractFrustum()`
+- Check projection matrix field of view isn't too narrow
+
+**All blocks always visible**:
+- Verify frustum is being extracted with correct matrices
+- Check that view and projection matrices are properly computed
+- Ensure projection matrix matches the one used for rendering
+
+**Incorrect block counts**:
+- Use `CreateTestBlocks()` for known 27-block configuration
+- Verify grid is initialized before setting blocks
+- Check bounds when setting blocks (out-of-bounds calls return false)
+
 ## Testing Guidelines
+
 
 ### Writing Good Tests
 

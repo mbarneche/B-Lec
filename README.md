@@ -1,233 +1,219 @@
-# B-Lec - Electricity Simulator
+# B-Lec
 
-A free, open-source 3D electricity simulator game for Windows, Linux, and macOS. Inspired by Minecraft's redstone mechanics, B-Lec allows players to design and test electrical circuits in real-time.
+A C++ 3D voxel game prototype demonstrating modular architecture with window management, rendering, input handling, and block-based world system.
 
 ## Features
 
-### Current (Phase 1)
-- ✅ 3D block-based world rendering with OpenGL 4.6
-- ✅ Infinite flat world generation
-- ✅ Camera system with free movement
-- ✅ Input handling (keyboard and mouse)
-- ✅ Multiple block types with different properties
-- ✅ Basic UI system with block selection
-- ✅ World serialization (save/load)
-- ✅ Cross-platform support (Windows, Linux, macOS)
-
-### Planned Features
-- ⏳ Power propagation and circuit simulation
-- ⏳ Block placement/destruction mechanics
-- ⏳ Complex circuit components (gates, sensors, etc.)
-- ⏳ Advanced UI with property editor
-- ⏳ WorldEdit-style tools (copy, paste, fill)
-- ⏳ Custom textures and block appearance
-- ⏳ Multiplayer support
-- ⏳ Circuit sharing and community library
+- **Modular Architecture**: Clean separation of concerns across window, input, rendering, world, and debug systems
+- **3D Rendering**: OpenGL-based 3D graphics with camera control, mesh rendering, and frustum culling
+- **Voxel Grid System**: Block-based world with efficient frustum culling for visibility optimization
+- **Input Handling**: Keyboard and mouse input with camera movement and look controls
+- **Debug Overlay**: Real-time debugging information including FPS, camera position, and block visibility counts
+- **Cross-Platform**: Windows, Linux, and macOS support through GLFW and standard C++17
+- **Minimal Dependencies**: Only GLFW (windowing), OpenGL (rendering), and GLM (mathematics) required
+- **Lightweight Testing**: Custom testing framework with dedicated test suite for each module
 
 ## Quick Start
 
 ### Prerequisites
 
 - CMake 3.20+
-- C++17 compiler (MSVC, GCC, Clang)
-- Modern graphics card supporting OpenGL 4.6
+- C++17 compiler (MSVC, GCC, or Clang)
+- OpenGL 2.1 or higher
+- Internet access for first build (dependencies are auto-downloaded)
 
-### Building
-
-**Linux/macOS:**
-```bash
-git clone https://github.com/yourusername/B-Lec.git
-cd B-Lec
-mkdir build && cd build
-cmake -DCMAKE_BUILD_TYPE=Release ..
-cmake --build . --parallel $(nproc)
-./bin/blec
-```
+### Build and Run
 
 **Windows (Visual Studio):**
 ```cmd
-git clone https://github.com/yourusername/B-Lec.git
-cd B-Lec
-mkdir build && cd build
+mkdir build
+cd build
 cmake -G "Visual Studio 17 2022" -A x64 ..
 cmake --build . --config Release
 .\bin\Release\blec.exe
 ```
 
+**Linux/macOS:**
+```bash
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --parallel
+./bin/blec
+```
+
 ### Controls
 
-- **WASD**: Move camera forward/backward and left/right
-- **Space**: Move camera up
-- **Shift**: Move camera down
-- **ESC**: Quit application
-- **F3**: Toggle debug overlay (planned)
-- **E**: Open block palette (planned)
+- **W/A/S/D**: Move forward/left/backward/right
+- **Space/Ctrl**: Move up/down
+- **Mouse**: Look around (mouse capture when in window)
+- **F3**: Toggle debug overlay
 
-## Project Structure
 
-```
-B-Lec/
-├── ElectricitySimulator/
-│   ├── include/        # Header files for each system
-│   ├── src/           # Implementation files
-│   ├── assets/        # Game assets (textures, models)
-│   └── external/      # External libraries
-├── docs/              # Documentation
-├── tests/             # Unit tests (planned)
-└── CMakeLists.txt     # Build configuration
-```
+## Architecture Overview
 
-## Architecture
+B-Lec follows a **modular architecture** with clear separation of concerns:
 
-B-Lec uses a **System-Based Architecture** with independent systems managing:
+- **Window Module**: GLFW window lifecycle and OS integration
+- **Input Module**: Keyboard and mouse state tracking
+- **Render Module**: OpenGL operations, font rendering, camera, and mesh management
+- **World Module**: Voxel grid system with frustum culling optimization
+- **Debug Module**: Real-time debugging overlay and statistics
 
-- **Rendering System**: 3D graphics with OpenGL
-- **World System**: Block management, chunks, infinite world
-- **Input System**: Keyboard and mouse input
-- **Camera System**: First-person camera control
-- **UI System**: On-screen interface and HUD
-- **Persistence System**: Save/load functionality
-
-See [Architecture Documentation](docs/ARCHITECTURE.md) for detailed design information.
+For detailed architecture, design principles, and module interactions, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Dependencies
 
-### Minimal External Dependencies
-- **GLFW 3.3+**: Window creation and input
-- **OpenGL 4.6**: Rendering
-- **GLM**: Vector/matrix mathematics
-- **GLAD**: OpenGL function loading
+Dependencies are automatically downloaded during build configuration:
 
-All dependencies are lightweight, widely supported, and chosen for maintainability.
+- **GLFW 3.4**: Window creation and input event management
+- **GLM 1.0.2**: Header-only mathematics library for 3D transformations
+- **OpenGL**: Native graphics API (already on most systems)
 
-## Development
+## Building with Tests
 
-See [Development Guide](docs/DEVELOPMENT.md) for:
-- Build instructions for your platform
-- Code style guidelines
-- How to add new features
-- Testing procedures
+To build and run the test suite:
 
-## Design Principles
+**Windows:**
+```cmd
+cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON ..
+cmake --build . --config Release
+cmake --build . --target run_tests
+```
 
-### Code Quality
-- Clean, organized code following C++ best practices
-- Comprehensive documentation and comments
-- Minimal dependencies for easy maintenance
-- Cross-platform compatibility
-
-### Performance
-- Efficient chunk-based world management
-- Optimized rendering pipeline
-- Support for large circuits without lag
-- Scalable to thousands of blocks
-
-### Security & Privacy
-- No data collection or telemetry
-- No network communication (single-player only)
-- All saves stored locally
-- Full source code transparency
-
-### Community
-- Open-source under MIT License
-- Welcoming contribution guidelines
-- Active development roadmap
-- Regular updates and improvements
-
-## System Requirements
-
-### Minimum
-- **OS**: Windows 7+, Ubuntu 16.04+, macOS 10.13+
-- **CPU**: 2 cores @ 1.5 GHz
-- **RAM**: 512 MB
-- **VRAM**: 256 MB with OpenGL 4.6 support
-- **Storage**: 50 MB
-
-### Recommended
-- **OS**: Windows 10+, Ubuntu 20.04+, macOS 11+
-- **CPU**: 4 cores @ 2.0 GHz
-- **RAM**: 4 GB
-- **VRAM**: 2 GB with OpenGL 4.6 support
-- **Storage**: 100 MB
-
-## License
-
-B-Lec is released under the **MIT License**. See [LICENSE](LICENSE) file for details.
-
-The software is free to use, modify, and distribute.
+**Linux/macOS:**
+```bash
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ..
+cmake --build . --parallel
+cmake --build . --target run_tests
+```
 
 ## Contributing
 
-We welcome contributions! Please read [Development Guide](docs/DEVELOPMENT.md) for guidelines.
+We welcome contributions! This section explains how to participate in development.
 
-Steps to contribute:
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+### Setting Up Your Development Environment
 
-## Roadmap
+**1. Clone and setup:**
+```bash
+git clone https://github.com/yourusername/B-Lec.git
+cd B-Lec
+mkdir build
+cd build
+```
 
-### Phase 1 (Current) ✅
-- Core world rendering
-- Basic block system
-- Camera and input
-- Persistence
+**2. Configure with tests enabled:**
+```bash
+# Windows
+cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON ..
 
-### Phase 2 (Next)
-- Power simulation engine
-- Block interaction (placement/destruction)
-- Circuit components (switches, sensors, etc.)
-- Advanced block types
+# Linux/macOS
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ..
+```
 
-### Phase 3
-- UI improvements
-- WorldEdit-style tools
-- Sound effects
-- Performance optimizations
+**3. Build and verify:**
+```bash
+cmake --build .
+cmake --build . --target run_tests
+```
 
-### Phase 4+
-- Multiplayer support
-- Custom content system
-- Community library
-- Advanced features
+### Development Workflow
 
-## Credits
+**1. Understanding the Code**
+   - Read the module header files in `include/` for API documentation
+   - Check test files in `code_testing/` for usage examples
+   - See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for detailed module guides
 
-B-Lec is created and maintained by the open-source community.
+**2. Code Style**
+   - Classes and functions: `PascalCase`
+   - Constants: `kPascalCase` (e.g., `kWindowWidth`)
+   - Variables: `snake_case`
+   - Member variables: `snake_case_` (with trailing underscore)
+   - Use header guards: `#ifndef BLEC_MODULE_CLASS_H`
+   - Namespace: `blec::module::ClassName`
 
-### Inspiration
-- Minecraft Redstone mechanics
-- Real-world electrical circuit principles
-- Educational simulation games
+**3. Making Changes**
 
-### Libraries Used
-- GLFW (Graphics)
-- OpenGL (Rendering)
-- GLM (Mathematics)
+   **Adding a new function:**
+   ```cpp
+   // 1. Add declaration to header
+   /// Explain what this function does
+   bool MyNewFunction();
+   
+   // 2. Implement in source file
+   bool ClassName::MyNewFunction() {
+       // Implementation with clear comments
+       return true;
+   }
+   
+   // 3. Write test case
+   TEST_CASE(TestMyNewFunction) {
+       ASSERT_TRUE(MyNewFunction());
+   }
+   ```
 
-## Support
+   **Modifying existing functions:**
+   - Update header declaration if signature changes
+   - Update implementation in source file
+   - Find all usages with: `grep -r "FunctionName" src/ include/`
+   - Update affected tests
+   - Update documentation comments
 
-For issues, questions, or suggestions:
-- Open an issue on GitHub
-- Check documentation in [docs/](docs/)
-- Review code examples in the repository
+   **Adding a new module:**
+   - Create header: `include/module/class.h`
+   - Create implementation: `src/module/class.cpp`
+   - Add source file to `CMakeLists.txt`
+   - Create test file: `code_testing/module/test_class.cpp`
+   - Update test CMakeLists.txt
+   - Integrate in `main.cpp` if needed
 
-## Disclaimer
+**4. Testing**
 
-This software is provided "as is" without warranty. Users are responsible for their own use of the software.
+   Always run tests before committing:
+   ```bash
+   cmake --build . --target run_tests
+   ```
 
-## Vision
+   Follow these guidelines:
+   - One test case per function/behavior
+   - Test name starts with "Test"
+   - Test both success and error cases
+   - Use clear assertion messages
 
-B-Lec aims to be the premier educational and recreational electricity simulation game, combining:
-- Intuitive gameplay with Minecraft-like mechanics
-- Accurate simulation of electrical concepts
-- Accessible to both casual players and educators
-- Open-source for transparency and community contribution
+**5. Documentation**
 
----
+   When making changes, update:
+   - Code comments explaining "why", not just "what"
+   - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for structural changes
+   - [docs/BUILDING.md](docs/BUILDING.md) if build process changes
+   - This README if adding user-facing features
 
-**Happy circuit building!** 🔌⚡
+**6. Committing and Pull Requests**
 
-For more information, see the [documentation](docs/) or visit our GitHub repository.
+   Before submitting a PR, ensure:
+   - Code compiles without warnings
+   - All tests pass
+   - New code has unit tests
+   - Code follows naming conventions
+   - Complex logic is documented
+   - Commit messages are clear and descriptive
+
+### Resources for Contributors
+
+- [Building Guide](docs/BUILDING.md) - Comprehensive build instructions
+- [Architecture Documentation](docs/ARCHITECTURE.md) - System design and module details
+- [Development Guide](docs/DEVELOPMENT.md) - In-depth developer reference with examples
+- Header file comments - API documentation and usage
+- Test files - Code examples and edge cases
+
+## License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) file for details.
+
+## Getting Help
+
+- Check the [Development Guide](docs/DEVELOPMENT.md) for detailed explanations and code examples
+- Review test files for usage patterns
+- Search existing code for similar implementations
+- Open an issue to discuss features or bugs
+
