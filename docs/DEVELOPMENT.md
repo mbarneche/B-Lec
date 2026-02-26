@@ -1,307 +1,451 @@
 # B-Lec Development Guide
 
-This guide explains how to build, develop, and contribute to the B-Lec electricity simulator.
+Welcome to the B-Lec project! This guide will help you understand the codebase and contribute effectively.
 
-## Table of Contents
+## Quick Start for Developers
 
-1. [Prerequisites](#prerequisites)
-2. [Building the Project](#building-the-project)
-3. [Project Structure](#project-structure)
-4. [Code Style Guidelines](#code-style-guidelines)
-5. [Adding New Features](#adding-new-features)
-6. [Testing](#testing)
+### 1. Setting Up Your Environment
 
-## Prerequisites
-
-### Required Software
-
-- **CMake** 3.20 or higher
-- **C++ Compiler** with C++17 support:
-  - MSVC 2019+ (Visual Studio 2019+) for Windows
-  - GCC 7+ for Linux
-  - Clang 5+ for macOS
-- **Git** for version control
-
-### System Dependencies
-
-#### Windows
-```powershell
-# Using vcpkg (recommended)
-vcpkg install glfw3:x64-windows glad:x64-windows glm:x64-windows
+**Clone the repository**:
+```bash
+git clone https://github.com/yourusername/B-Lec.git
+cd B-Lec
 ```
 
-#### Linux (Ubuntu/Debian)
+**Create build directory**:
 ```bash
-sudo apt-get update
-sudo apt-get install -y \
-    build-essential \
-    cmake \
-    libglfw3-dev \
-    libglm-dev \
-    pkg-config
-```
-
-#### macOS
-```bash
-brew install cmake glfw3 glm
-```
-
-## Building the Project
-
-### Windows (Visual Studio)
-
-```bash
-# Create build directory
 mkdir build
 cd build
-
-# Configure with CMake
-cmake -G "Visual Studio 16 2019" -A x64 ..
-
-# Build
-cmake --build . --config Release
-
-# Run
-.\bin\Release\blec.exe
 ```
 
-### Linux/macOS
-
+**Configure with tests enabled** (recommended for development):
 ```bash
-# Create build directory
-mkdir build
-cd build
+# Windows
+cmake -G "Visual Studio 17 2022" -A x64 -DBUILD_TESTS=ON ..
 
-# Configure with CMake
-cmake -DCMAKE_BUILD_TYPE=Release ..
-
-# Build (using as many cores as available)
-cmake --build . --parallel $(nproc)
-
-# Run
-./bin/blec
+# Linux/macOS
+cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_TESTS=ON ..
 ```
 
-### Debug Build
-
-For debugging with symbols:
-
+**Build**:
 ```bash
-cmake -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build .
 ```
 
-## Project Structure
-
-```
-B-Lec/
-├── CMakeLists.txt              # Main build configuration
-├── README.md                   # Project overview
-├── LICENSE                     # Open source license
-├── docs/
-│   ├── ARCHITECTURE.md         # System architecture
-│   ├── DEVELOPMENT.md          # This file
-│   └── API.md                  # API documentation (future)
-├── ElectricitySimulator/
-│   ├── include/
-│   │   ├── core/              # Application and system interfaces
-│   │   ├── rendering/         # Rendering system headers
-│   │   ├── world/             # World and block system headers
-│   │   ├── camera/            # Camera system headers
-│   │   ├── input/             # Input management headers
-│   │   ├── ui/                # UI system headers
-│   │   └── persistence/       # Serialization headers
-│   ├── src/                   # Implementation files
-│   │   ├── (mirrors include structure)
-│   ├── assets/                # Game assets (textures, models, etc.)
-│   ├── external/              # External libraries (GLFW, GLM, GLAD)
-│   └── CMakeLists.txt         # Sub-project build configuration
-└── build/                     # Output directory (generated)
-    └── bin/
-        └── blec               # Compiled executable
+**Run tests**:
+```bash
+cmake --build . --target run_tests
 ```
 
-## Code Style Guidelines
+### 2. Project Structure Quick Guide
 
-### Naming Conventions
+- **include/**: Public API headers, organized by module
+- **src/**: Implementation files, same organization as include/
+- **code_testing/**: Unit tests, one per module
+- **CMakeLists.txt**: Build configuration
+- **ARCHITECTURE.md**: Detailed architecture documentation
+- **BUILDING.md**: Build instructions for users
 
-- **Classes**: `PascalCase` (e.g., `Renderer`, `InputManager`)
-- **Functions**: `PascalCase` (e.g., `Initialize()`, `Render()`)
-- **Variables**: `snake_case` (e.g., `window_width`, `is_running`)
-- **Constants**: `UPPER_SNAKE_CASE` (e.g., `CHUNK_SIZE`, `MAX_CHUNKS`)
-- **Member variables**: `snake_case_` (with trailing underscore, e.g., `window_width_`)
-- **Enum values**: `UPPER_SNAKE_CASE` (e.g., `COPPER_WIRE`, `AIR`)
+## Understanding the Code
 
-### File Organization
+### Module Overview
 
-Each system should have:
-- **Header file** in `include/{system}/` with full documentation
-- **Implementation** in `src/{system}/` with the same filename
-- **Minimal includes** in headers (use forward declarations when possible)
+**Window Module** (`include/window/window_manager.h`)
+- Manages GLFW window lifecycle
+- Handles window events and properties
+- ~100 lines of code per file
 
-### Documentation
+**Input Module** (`include/input/input_handler.h`)
+- Tracks keyboard and mouse state
+- Provides input querying APIs
+- ~150 lines of code per file
 
-All public classes and functions must have:
-- **Doxygen comments** with `@brief` and `@param` tags
-- **Clear descriptions** of parameters and return values
-- **Examples** for complex functionality
+**Render Module** (`include/render/`)
+- `renderer.h`: Basic OpenGL operations
+- `font.h`: Bitmap font rendering
+- ~200 lines of code total
 
-**Example:**
+**Debug Module** (`include/debug/debug_overlay.h`)
+- Displays real-time debug information
+- Manages debug state and rendering
+- ~150 lines of code per file
+
+### Code Style
+
+**Header files** (include your guards at the top):
 ```cpp
-/**
- * @brief Initialize the renderer with window dimensions
- * @param window_width Width of the rendering window in pixels
- * @param window_height Height of the rendering window in pixels
- * @return true if initialization was successful, false otherwise
- */
-bool Initialize(uint32_t window_width, uint32_t window_height);
+#ifndef BLEC_MODULE_CLASS_H
+#define BLEC_MODULE_CLASS_H
+
+namespace blec {
+namespace module {
+
+/// Brief description of what this class does
+class ClassName {
+public:
+    /// Explain what this does
+    bool PublicMethod();
+
+private:
+    // Private members start with underscore
+    int member_;
+};
+
+} // namespace module
+} // namespace blec
+
+#endif // BLEC_MODULE_CLASS_H
 ```
 
-### Code Quality
-
-- **Use `const`** for immutable references and read-only methods
-- **Smart pointers** for memory management (`std::unique_ptr`, `std::shared_ptr`)
-- **avoid raw pointers** except for temporary references and GLFW callbacks
-- **Error handling**: Log errors to `std::cerr` and return meaningful error codes
-- **Include guards**: Use `#pragma once` for headers
-
-### Formatting
-
-- **Indentation**: 4 spaces (no tabs)
-- **Line length**: Maximum 100 characters when practical
-- **Braces**: Opening brace on same line (K&R style with C++11 modifications)
-
+**Implementation files**:
 ```cpp
-if (condition) {
-    statement;
-} else {
-    statement;
+#include "module/class.h"
+#include <necessary_headers>
+
+namespace blec {
+namespace module {
+
+// Implementation with clear comments explaining logic
+bool ClassName::PublicMethod() {
+    // Do something
+    return true;
+}
+
+} // namespace module
+} // namespace blec
+```
+
+### Naming Examples
+
+✅ **Good**:
+```cpp
+class WindowManager { };
+bool InitializeGLFW();
+void GetFramebufferSize(int* width, int* height);
+const int kWindowWidth = 1280;
+std::string window_title_;
+```
+
+❌ **Bad**:
+```cpp
+class WindowMgr { };  // Don't abbreviate
+bool init_glfw();  // Methods should be PascalCase
+void getFramebufferSize(int* w, int* h);  // Avoid abbreviations
+#define WINDOW_WIDTH 1280  // Use constexpr or const
+std::string windowTitle;  // Member variables should be snake_case with _
+```
+
+## Working with Modules
+
+### Creating a New Function
+
+1. **Add declaration to header**:
+```cpp
+/// Returns the current frame rate in frames per second
+double GetCurrentFPS() const;
+```
+
+2. **Implement in source file**:
+```cpp
+double WindowManager::GetCurrentFPS() const {
+    // Implementation with logic comments if complex
+    return fps_;
 }
 ```
 
-## Adding New Features
-
-### Adding a New Block Type
-
-1. Add to `BlockType` enum in [include/world/block.h](../ElectricitySimulator/include/world/block.h):
+3. **Write tests**:
 ```cpp
-enum class BlockType : uint8_t {
-    // ... existing types
-    MY_BLOCK = 9,
-    BLOCK_TYPE_COUNT
-};
+TEST_CASE(TestGetCurrentFPS) {
+    WindowManager wm;
+    ASSERT_GE(wm.GetCurrentFPS(), 0.0);
+    ASSERT_LE(wm.GetCurrentFPS(), 1000.0);  // Reasonable upper bound
+}
 ```
 
-2. Add info to `block_infos_` array in [src/world/block.cpp](../ElectricitySimulator/src/world/block.cpp):
+### Modifying Existing Functions
+
+1. **Check all usages** with grep/search:
+```bash
+grep -r "FunctionName" src/ include/
+```
+
+2. **Update signature if needed** in header
+3. **Update implementation** in source
+4. **Update tests** to verify behavior
+5. **Update documentation** in comments
+
+### Adding a New Module
+
+**Example: Adding a "World" module for game world management**
+
+1. **Create header** `include/world/world.h`:
 ```cpp
-const BlockInfo BlockRegistry::block_infos_[] = {
-    // ... existing blocks
-    {"My Block", "Description", true, glm::vec3(0.5f, 0.5f, 0.5f)},
+#ifndef BLEC_WORLD_WORLD_H
+#define BLEC_WORLD_WORLD_H
+
+namespace blec {
+namespace world {
+
+class World {
+public:
+    World();
+    ~World();
+    
+    bool Initialize();
+    void Update(double deltaTime);
+    void Shutdown();
+    
+private:
+    // Members...
 };
+
+} // namespace world
+} // namespace blec
+
+#endif // BLEC_WORLD_WORLD_H
 ```
 
-### Adding a New System
+2. **Create implementation** `src/world/world.cpp`
 
-1. Create header in `include/{system}/{system}.h`
-2. Create implementation in `src/{system}/{system}.cpp`
-3. Add class member and initialization in `Application` class
-4. Update `CMakeLists.txt` to include new source files
-5. Document in [ARCHITECTURE.md](./ARCHITECTURE.md)
+3. **Update CMakeLists.txt**:
+```cmake
+add_executable(blec
+    # ... existing sources ...
+    src/world/world.cpp
+)
+```
 
-### Common Modifications
+4. **Create tests** `code_testing/world/test_world.cpp`
 
-**Changing chunk size:**
-- Modify `CHUNK_SIZE` constant in [include/world/chunk.h](../ElectricitySimulator/include/world/chunk.h)
-- Regenerate affected chunk data
+5. **Update test CMakeLists.txt**:
+```cmake
+set(TEST_SOURCES
+    # ... existing tests ...
+    world/test_world.cpp
+)
+```
 
-**Adjusting camera speed:**
-- Modify `move_speed` in `Application::ProcessInput()` in [src/application.cpp](../ElectricitySimulator/src/application.cpp)
+6. **Integrate in main.cpp** if needed
 
-**Changing viewport size:**
-- Modify `window_width_` and `window_height_` in [src/application.cpp](../ElectricitySimulator/src/application.cpp)
+## Testing Guidelines
 
-## Testing
+### Writing Good Tests
 
-### Build Verification
+**❌ Bad test**:
+```cpp
+TEST_CASE(TestEverything) {
+    MyClass obj;
+    obj.DoSomething();  // Unclear what we're testing
+}
+```
 
-After building, verify the executable runs:
+**✅ Good test**:
+```cpp
+TEST_CASE(TestInitialization) {
+    MyClass obj;
+    ASSERT_TRUE(obj.Initialize());
+    ASSERT_TRUE(obj.IsInitialized());
+}
 
+TEST_CASE(TestInvalidInput) {
+    MyClass obj;
+    ASSERT_FALSE(obj.SetValue(-1));  // Negative values invalid
+}
+
+TEST_CASE(TestStateTransition) {
+    MyClass obj;
+    obj.Start();
+    ASSERT_TRUE(obj.IsRunning());
+    
+    obj.Stop();
+    ASSERT_FALSE(obj.IsRunning());
+}
+```
+
+### Test Organization
+
+- One test class/function per test case
+- Test name starts with "Test"
+- Test structure: Setup → Execute → Verify
+- Clear assertion messages
+- Test both success and error cases
+
+### Running Tests During Development
+
+Test locally before committing:
 ```bash
-./bin/blec
+cmake --build . --target run_tests
 ```
 
-Expected output:
-```
-Starting B-Lec Electricity Simulator...
-Application initialized successfully
-```
+Fix any failing tests immediately - they help catch regressions.
 
-### Manual Testing Checklist
+## Common Tasks
 
-- [ ] Window opens and displays rendered blocks
-- [ ] Can move camera with WASD keys
-- [ ] Can move up/down with Space/Shift
-- [ ] ESC key closes the application
-- [ ] No console errors on startup
-- [ ] Frame rate is stable (60+ FPS)
+### Debugging a Crash
 
-### Performance Profiling
-
-For profiling on different platforms:
-
-**Windows (Visual Studio):**
-- Use built-in profiler: Debug → Performance Profiler
-
-**Linux/macOS:**
+1. **Build with debug symbols**:
 ```bash
-# Build with debug symbols
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo ..
-cmake --build .
-
-# Profile with perf (Linux)
-perf record ./bin/blec
-perf report
+cmake -DCMAKE_BUILD_TYPE=Debug ..
 ```
 
-## Common Issues
-
-### CMake Not Finding Libraries
-
-**Solution**: Set the library path explicitly:
+2. **Run in debugger**:
 ```bash
-cmake -DCMAKE_PREFIX_PATH=/path/to/libraries ..
+# GDB (Linux/macOS)
+gdb ./bin/blec
+
+# Visual Studio (Windows)
+# Open .sln and press F5
 ```
 
-### Compilation Errors
+3. **Add debug logging**:
+```cpp
+std::fprintf(stderr, "DEBUG: variable value = %d\n", value);
+```
 
-**Missing GLM headers:**
-- Ensure GLM is installed and CMake can find it
-- Verify `find_package(glm)` in CMakeLists.txt
+### Adding a New Keyboard Shortcut
 
-**GLFW window error:**
-- Verify GLFW is properly installed
-- Check that your system supports OpenGL 4.6
+1. **Update InputHandler** (if needed) to recognize the key
+2. **Add handler in main.cpp**:
+```cpp
+if (input_handler.IsKeyDown(GLFW_KEY_F3)) {
+    // Your code here
+}
+```
+3. **Document in controls section** of README
 
-### Runtime Issues
+### Improving Performance
 
-**Black screen on startup:**
-- Check that chunk generation is working
-- Verify camera position is valid
+1. **Profile the application**:
+   - Use platform profilers (perf on Linux, Instruments on macOS, VTune on Windows)
+   - Check FPS in debug overlay
+
+2. **Identify bottleneck**:
+   - Is it CPU? GPU? Rendering?
+
+3. **Optimize** the bottleneck:
+   - Don't premature optimize
+   - Measure before and after
+   - Consider trade-offs (readability vs performance)
+
+4. **Verify with tests** that optimization doesn't break functionality
+
+## Documentation
+
+### Commenting Code
+
+**Always explain "why", not just "what"**:
+
+```cpp
+// ❌ Not helpful - the code is obvious
+int width = 800;  // Set width to 800
+
+// ✅ Helpful - explains the reason
+// Use 1280 width to match primary monitor resolution on modern laptops
+constexpr int kWindowWidth = 1280;
+```
+
+### Updating Architecture Documentation
+
+If you make structural changes:
+1. Update ARCHITECTURE.md with new design
+2. Update diagrams if needed
+3. Update module descriptions
+4. Update data flow if changed
+
+### Updating User Guides
+
+If you add user-facing features:
+1. Update README.md with new features
+2. Update BUILDING.md if build process changed
+3. Update controls in BUILDING.md if input changed
+
+## Pull Request Checklist
+
+Before submitting a pull request:
+
+- [ ] Code compiles without warnings
+- [ ] All tests pass
+- [ ] New code has unit tests
+- [ ] Code follows naming conventions
+- [ ] Comments explain complex logic
+- [ ] No hardcoded paths or magic numbers
+- [ ] Documentation updated
+- [ ] Commit messages are clear
+
+## Helpful Commands
+
+**Search for a function**:
+```bash
+grep -r "FunctionName" .
+```
+
+**Find all TODOs**:
+```bash
+grep -r "TODO" src/ include/
+```
+
+**Count lines of code**:
+```bash
+find src include -name "*.cpp" -o -name "*.h" | xargs wc -l
+```
+
+**Format code** (if using clang-format):
+```bash
+find src include -name "*.cpp" -o -name "*.h" | xargs clang-format -i
+```
+
+**Check for compilation warnings**:
+```bash
+# Linux/macOS
+cmake -DCMAKE_CXX_FLAGS="-Wall -Wextra -Wpedantic -Werror" ..
+
+# Then build and fix warnings
+```
 
 ## Getting Help
 
-1. Check [ARCHITECTURE.md](./ARCHITECTURE.md) for system design
-2. Review existing code for patterns and conventions
-3. Check error output in console
-4. Create an issue on GitHub with detailed description
+### Understanding a Module
+1. Read the header file comments
+2. Check the ARCHITECTURE.md section
+3. Look at the test file for usage examples
+4. Search for usages in main.cpp or other modules
 
-## Contributing
+### Debugging an Issue
+1. Check if there's a failing test
+2. Add debug output to identify the problem
+3. Write a test that reproduces the issue
+4. Fix the issue
+5. Verify test now passes
 
-When making changes:
+### Contributing a Feature
+1. Create an issue describing the feature
+2. Discuss design with maintainers
+3. Create a branch for the feature
+4. Follow the guidelines above
+5. Submit PR with reference to the issue
 
-1. Create a feature branch: `git checkout -b feature/my-feature`
-2. Follow code style guidelines
-3. Add documentation for new functionality
-4. Test thoroughly before committing
-5. Write clear commit messages
-6. Submit a pull request with description of changes
+## Code Review
+
+### Being Reviewed
+
+- Respond to feedback constructively
+- Ask questions if feedback is unclear
+- Mark conversations as resolved when done
+- Thank reviewer for their time
+
+### Reviewing Others' Code
+
+- Look for clarity and correctness
+- Suggest improvements kindly
+- Ask questions to understand intent
+- Approve when satisfied
+
+## Resource List
+
+- **BUILDING.md**: How to build the project
+- **ARCHITECTURE.md**: System design and module details
+- **code_testing/README.md**: Testing framework and examples
+- **Include file comments**: Method documentation
+- **Test files**: Usage examples and edge cases
+
+Good luck! Happy coding! 🚀
