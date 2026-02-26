@@ -72,17 +72,18 @@ xcode-select --install
 
 Choose the method for your platform:
 
-#### **Windows (Option A: vcpkg)**
+#### **Windows (Option A: vcpkg + MinGW) ⭐ RECOMMENDED**
 ```cmd
 # Install vcpkg if you don't have it
 git clone https://github.com/Microsoft/vcpkg.git
 cd vcpkg
 .\bootstrap-vcpkg.bat
-.\vcpkg integrate install
 
-# Install dependencies
-.\vcpkg install glfw3:x64-windows glm:x64-windows glad:x64-windows
+# Install dependencies for MinGW (NOT Visual Studio)
+.\vcpkg install glfw3:x64-mingw-dynamic glm:x64-mingw-dynamic glad:x64-mingw-dynamic
 ```
+
+This installs GLFW, GLM, and GLAD automatically with MinGW, no manual setup needed!
 
 #### **Windows (Option B: Manual Download)**
 1. Download GLFW from https://www.glfw.org/download
@@ -169,18 +170,27 @@ cmake --build . --parallel $(nproc)
 ./bin/blec
 ```
 
-### **Windows (MinGW) ⭐**
+### **Windows (MinGW + vcpkg) ⭐**
 
 ```cmd
 cd B-Lec
 mkdir build
 cd build
-cmake -G "MinGW Makefiles" ..
-cmake --build . --config Release
+
+# Configure with vcpkg toolchain (adjust path to your vcpkg installation)
+cmake -G "MinGW Makefiles" ^
+  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic ^
+  ..
+
+# Build
+cmake --build . --config Release --parallel 4
 
 # Run
 .\bin\blec.exe
 ```
+
+**Note**: Replace `C:\path\to\vcpkg` with your actual vcpkg installation path (e.g., `C:\Users\YourName\Downloads\vcpkg`).
 
 ### **Debug Build** (for development)
 ```bash
@@ -195,18 +205,21 @@ cmake --build .
 
 ### **Step 1: Build on Windows**
 
-On your Windows machine:
+On your Windows machine (with vcpkg installed):
 ```cmd
 cd B-Lec
 mkdir build
 cd build
-cmake -G "MinGW Makefiles" ..
-cmake --build . --config Release
+cmake -G "MinGW Makefiles" ^
+  -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+  -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic ^
+  ..
+cmake --build . --config Release --parallel 4
 ```
 
 Copy the executable:
 ```
-blec.exe → B-Lec-Game-Windows-v0.1.0/blec.exe
+bin\blec.exe → B-Lec-Game-Windows-v0.1.0\blec.exe
 ```
 
 ### **Step 2: Build on Linux**
@@ -352,13 +365,42 @@ Phase 1 targets:
 
 ## 🐛 Troubleshooting
 
+### Windows-Specific Issues
+
+**"Unable to find a valid Visual Studio instance"**
+- You're using `x64-windows` triplet with vcpkg, which requires Visual Studio
+- **Fix**: Use `x64-mingw-dynamic` triplet instead:
+  ```cmd
+  .\vcpkg install glfw3:x64-mingw-dynamic glm:x64-mingw-dynamic glad:x64-mingw-dynamic
+  ```
+
+**"Cannot find source file: glad.c"**
+- GLAD files are missing
+- **Fix**: Download GLAD from https://glad.dav1d.de/
+  - Select OpenGL 4.6, Core profile
+  - Extract to `ElectricitySimulator/external/glad/`
+  - Then delete `build/` and reconfigure cmake
+
+**"OpenGL header already included"**
+- glad.h must be included BEFORE GLFW
+- **Fix**: Check that `#include <glad/glad.h>` comes before `#include <GLFW/glfw3.h>` in all source files
+
+**"cmake: command not found"**
+- CMake not installed or not in PATH
+- **Fix**: Install from https://cmake.org/download/ and add to PATH
+
+**"-Werror=unused-parameter" or similar**
+- Compiler treating warnings as errors (strict mode)
+- **Fix**: Already fixed in current codebase with `[[maybe_unused]]` attributes
+
 ### CMake Errors
 
-**"GLFW not found"**
-```bash
-# Install or set path
-cmake -DCMAKE_PREFIX_PATH=/path/to/glfw ..
-```
+**"GLFW not found" with vcpkg**
+- Make sure you passed the toolchain file to cmake:
+  ```cmd
+  cmake -DCMAKE_TOOLCHAIN_FILE=C:\path\to\vcpkg\scripts\buildsystems\vcpkg.cmake ^
+    -DVCPKG_TARGET_TRIPLET=x64-mingw-dynamic ..
+  ```
 
 **"GLM not found"**
 ```bash
@@ -380,7 +422,7 @@ ls ElectricitySimulator/external/glad/include/glad/glad.h
 - Verify OpenGL 4.6 Core profile selected
 
 **"GLFW symbols not found"**
-- Link against GLFW properly (should be automatic)
+- Link against GLFW properly (should be automatic with vcpkg)
 - Check CMakeLists.txt has `target_link_libraries(blec PRIVATE glfw)`
 
 ### Runtime Errors
@@ -414,7 +456,34 @@ ls ElectricitySimulator/external/glad/include/glad/glad.h
 - OpenGL 4.6: https://www.khronos.org/opengl/wiki/
 - CMake: https://cmake.org/documentation/
 
-## 🚀 After Phase 1 Success
+## � Iterative Development (Making Changes)
+
+After making changes to source code, you need to rebuild:
+
+### **Quick Rebuild**
+```cmd
+cd B-Lec/build
+cmake --build . --config Release
+```
+
+That's it! Only modified files are recompiled. No need to delete the build folder or reconfigure cmake.
+
+### **Faster Rebuilds (Parallel Compilation)**
+```cmd
+cmake --build . --config Release --parallel 4
+```
+
+Use `--parallel` to compile multiple files at once.
+
+### **When to Clean and Rebuild**
+Only delete `build/` and reconfigure if:
+- You modify `CMakeLists.txt`
+- Dependencies change (install new libraries in vcpkg)
+- You get strange errors that persist
+
+For normal code edits, just run `cmake --build .` again!
+
+## �🚀 After Phase 1 Success
 
 Once Phase 1 is working:
 
