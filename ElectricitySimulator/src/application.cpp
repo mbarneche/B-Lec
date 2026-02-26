@@ -12,14 +12,14 @@
 #include "input/input_manager.h"
 #include "ui/ui_system.h"
 
-#include <GLFW/glfw3.h>
 #include <glad/glad.h>
+#include <GLFW/glfw3.h>
 #include <iostream>
 
 // Forward declarations for GLFW callbacks
 static Application* g_app_instance = nullptr;
 
-static void FramebufferSizeCallback(GLFWwindow* window, int width, int height) {
+static void FramebufferSizeCallback([[maybe_unused]] GLFWwindow* window, int width, int height) {
     if (g_app_instance && width > 0 && height > 0) {
         g_app_instance->OnWindowResize(static_cast<uint32_t>(width), 
                                         static_cast<uint32_t>(height));
@@ -185,7 +185,7 @@ void Application::ProcessInput() {
     // Block selection - mouse wheel scroll
     double mouse_x, mouse_y;
     glfwGetCursorPos(window_, &mouse_x, &mouse_y);
-    static double last_scroll_y = 0.0;
+    [[maybe_unused]] static double last_scroll_y = 0.0;
     
     // TODO: Implement proper scroll callback for block selection
     if (input_manager_->IsKeyJustPressed(Key::E)) {

@@ -37,6 +37,37 @@ Your B-Lec Electricity Simulator foundation is now ready. Here's what has been d
 
 Before you can compile and run, complete these steps:
 
+### Step 0: Install Build Tools
+
+#### **Windows - Required Tools**
+1. **CMake** (v3.20+): https://cmake.org/download/
+   - Download "Windows x64 ZIP" or installer
+   - Add to PATH during installation ✓
+   - Verify: `cmake --version`
+
+2. **Choose ONE compiler**:
+   - **Option A: MinGW** (Free, lightweight, no Visual Studio needed) ⭐
+     - Download: https://www.mingw-w64.org/
+     - Add to PATH
+     - Or use: `choco install mingw-w64`
+   
+   - **Option B: Visual Studio C++ Build Tools**
+     - Install [Visual Studio Community 2019](https://visualstudio.microsoft.com/downloads/)
+     - Select "C++ build tools" workload
+
+3. **Optional: Ninja** (for faster builds)
+   - Download: https://github.com/ninja-build/ninja/releases
+   - Or: `choco install ninja`
+
+4. **Git**: https://git-scm.com/download/win
+
+#### **Linux / macOS**
+```bash
+# Linux: Already covered below
+# macOS: Install Xcode Command Line Tools
+xcode-select --install
+```
+
 ### Step 1: Install Dependencies
 
 Choose the method for your platform:
@@ -138,28 +169,17 @@ cmake --build . --parallel $(nproc)
 ./bin/blec
 ```
 
-### **Windows (Command Prompt)**
+### **Windows (MinGW) ⭐**
+
 ```cmd
 cd B-Lec
 mkdir build
 cd build
-cmake -G "Visual Studio 16 2019" -A x64 ..
+cmake -G "MinGW Makefiles" ..
 cmake --build . --config Release
 
 # Run
-.\bin\Release\blec.exe
-```
-
-### **Windows (PowerShell)**
-```powershell
-cd B-Lec
-mkdir build
-cd build
-cmake -G "Visual Studio 16 2019" -A x64 ..
-cmake --build . --config Release
-
-# Run
-.\bin\Release\blec.exe
+.\bin\blec.exe
 ```
 
 ### **Debug Build** (for development)
@@ -168,6 +188,121 @@ cmake -DCMAKE_BUILD_TYPE=Debug ..
 cmake --build .
 ./bin/blec
 ```
+
+## 📦 Distribution (Sharing Your Game) ⭐
+
+**Build once on each platform, then share the executable. Players don't need build tools!**
+
+### **Step 1: Build on Windows**
+
+On your Windows machine:
+```cmd
+cd B-Lec
+mkdir build
+cd build
+cmake -G "MinGW Makefiles" ..
+cmake --build . --config Release
+```
+
+Copy the executable:
+```
+blec.exe → B-Lec-Game-Windows-v0.1.0/blec.exe
+```
+
+### **Step 2: Build on Linux**
+
+On a Linux machine (Debian/Ubuntu) or in a Linux VM:
+```bash
+sudo apt-get update
+sudo apt-get install -y build-essential cmake libglfw3-dev libglm-dev
+
+cd B-Lec
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --parallel $(nproc)
+```
+
+Copy the executable:
+```bash
+chmod +x bin/blec
+cp bin/blec B-Lec-Game-Linux-v0.1.0/
+```
+
+### **Step 3: Build on macOS**
+
+On a Mac:
+```bash
+brew install cmake glfw3 glm
+
+cd B-Lec
+mkdir build
+cd build
+cmake -DCMAKE_BUILD_TYPE=Release ..
+cmake --build . --parallel $(sysctl -n hw.ncpu)
+```
+
+Copy the executable:
+```bash
+chmod +x bin/blec
+cp bin/blec B-Lec-Game-macOS-v0.1.0/
+```
+
+### **Step 4: Share Cross-Platform Release**
+
+Create distribution folders:
+
+```
+B-Lec-Game-v0.1.0-Windows.zip
+├── blec.exe
+├── README.txt
+└── CONTROLS.txt
+
+B-Lec-Game-v0.1.0-Linux.tar.gz
+├── blec (executable)
+├── README.txt
+└── CONTROLS.txt
+
+B-Lec-Game-v0.1.0-macOS.tar.gz
+├── blec (executable)
+├── README.txt
+└── CONTROLS.txt
+```
+
+### **How Players Use It**
+
+**Windows**: Double-click `blec.exe` → Play!
+
+**Linux**: 
+```bash
+tar xzf B-Lec-Game-v0.1.0-Linux.tar.gz
+cd B-Lec-Game-v0.1.0-Linux
+./blec
+```
+
+**macOS**:
+```bash
+tar xzf B-Lec-Game-v0.1.0-macOS.tar.gz
+cd B-Lec-Game-v0.1.0-macOS
+./blec
+```
+
+### **Publishing on GitHub Releases**
+
+1. Go to your repository → Releases
+2. Click "Create a new release"
+3. Tag: `v0.1.0`
+4. Upload all three platform ZIP/TAR files
+5. Add release notes with system requirements
+
+### **Pro Tips**
+
+- Include `README.txt`: Game name, version, control instructions
+- Include `CONTROLS.txt`: WASD to move, E for menu, ESC to quit, etc.
+- Test on actual machines before releasing
+- Windows users: No additional setup needed! OpenGL is built-in
+- Linux/macOS users: They may need: `sudo apt install libgl1` (Linux only)
+- If targeting older systems, build on older OS versions
 
 ## 🎮 Testing Phase 1 Features
 

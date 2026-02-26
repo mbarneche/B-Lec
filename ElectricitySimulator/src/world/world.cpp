@@ -128,7 +128,7 @@ Chunk* World::GetOrCreateChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z
     return chunk_ptr;
 }
 
-Chunk* World::GetChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z) {
+Chunk* World::GetChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z) const {
     uint64_t key = GetChunkKey(chunk_x, chunk_y, chunk_z);
     
     auto it = chunks_.find(key);
@@ -361,7 +361,7 @@ void World::PropagatePower() {
     }
 }
 
-void World::UpdateBlockPower(int32_t x, int32_t y, int32_t z) {
+void World::UpdateBlockPower([[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] int32_t z) {
     // Placeholder for block power update
     // This will be implemented in a later phase
 }

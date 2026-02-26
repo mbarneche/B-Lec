@@ -76,12 +76,12 @@ void UISystem::SetShowBlockPalette(bool show) {
     show_block_palette_ = show;
 }
 
-void UISystem::RenderText(const std::string& text, int32_t x, int32_t y, float scale, const glm::vec3& color) {
+void UISystem::RenderText([[maybe_unused]] const std::string& text, [[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] float scale, [[maybe_unused]] const glm::vec3& color) {
     // Placeholder for text rendering
     // In a real implementation, this would use a font rendering library
 }
 
-void UISystem::RenderRect(int32_t x, int32_t y, uint32_t width, uint32_t height, const glm::vec3& color, bool filled) {
+void UISystem::RenderRect([[maybe_unused]] int32_t x, [[maybe_unused]] int32_t y, [[maybe_unused]] uint32_t width, [[maybe_unused]] uint32_t height, [[maybe_unused]] const glm::vec3& color, [[maybe_unused]] bool filled) {
     // Placeholder for rectangle rendering
     // In a real implementation, this would use OpenGL to draw rectangles
 }

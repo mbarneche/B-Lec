@@ -77,7 +77,7 @@ public:
      * @param chunk_z Chunk Z coordinate
      * @return Pointer to the chunk, or nullptr if it doesn't exist
      */
-    Chunk* GetChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z);
+    Chunk* GetChunk(int32_t chunk_x, int32_t chunk_y, int32_t chunk_z) const;
 
     /**
      * @brief Get all loaded chunks

@@ -11,7 +11,7 @@ Camera::Camera(const glm::vec3& position, const glm::vec3& target, const glm::ve
       aspect_ratio_(16.0f / 9.0f), yaw_(0.0f), pitch_(0.0f) {
 }
 
-void Camera::Update(float delta_time) {
+void Camera::Update([[maybe_unused]] float delta_time) {
     // Camera update logic can be added here if needed
 }
 

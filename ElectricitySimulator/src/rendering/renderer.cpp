@@ -173,7 +173,7 @@ void Renderer::Render(World* world, Camera* camera) {
     }
 }
 
-void Renderer::RenderCube(const glm::vec3& position, float scale, const glm::vec3& color) {
+void Renderer::RenderCube(const glm::vec3& position, float scale, [[maybe_unused]] const glm::vec3& color) {
     glm::mat4 model = glm::translate(glm::mat4(1.0f), position);
     model = glm::scale(model, glm::vec3(scale));
 

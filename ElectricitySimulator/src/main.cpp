@@ -6,7 +6,7 @@
 #include "core/application.h"
 #include <iostream>
 
-int main(int argc, char* argv[]) {
+int main([[maybe_unused]] int argc, [[maybe_unused]] char* argv[]) {
     std::cout << "Starting B-Lec Electricity Simulator..." << std::endl;
 
     Application app;
