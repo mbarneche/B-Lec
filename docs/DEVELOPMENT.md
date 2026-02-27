@@ -623,6 +623,292 @@ for (int z = 0; z < 32; z++) {
 - Verify grid is initialized before setting blocks
 - Check bounds when setting blocks (out-of-bounds calls return false)
 
+## Working with UI Module
+
+### Understanding the UI System
+
+The `UIManager` handles all user interface elements including the crosshair, pause menu, and mouse lock state. It manages game state transitions between playing and paused modes.
+
+**Key concepts**:
+- **Crosshair**: Always visible targeting reticle in screen center
+- **Pause Menu**: Overlay with buttons for Resume and Quit
+- **Mouse Lock**: GLFW cursor mode toggling for camera control
+- **Button Interaction**: Hit detection for menu buttons
+
+### Basic Setup
+
+**Initialize the UI manager**:
+```cpp
+#include "ui/ui_manager.h"
+
+blec::ui::UIManager ui_manager;
+
+// Initialize with window dimensions
+int window_width = 1280;
+int window_height = 720;
+ui_manager.Initialize(window_width, window_height);
+```
+
+### Pause State Management
+
+**Toggle pause state**:
+```cpp
+// Detect ESC key press
+static bool esc_was_down = false;
+if (input_handler.IsKeyDown(GLFW_KEY_ESCAPE)) {
+    if (!esc_was_down) {
+        ui_manager.TogglePause();
+        esc_was_down = true;
+    }
+} else {
+    esc_was_down = false;
+}
+
+// Or set pause state explicitly
+ui_manager.SetPaused(true);   // Pause
+ui_manager.SetPaused(false);  // Resume
+
+// Check pause state
+if (ui_manager.IsPaused()) {
+    // Game is paused - show menu, unlock mouse
+}
+```
+
+### Mouse Lock Integration
+
+**Update mouse lock based on pause state**:
+```cpp
+GLFWwindow* window = window_manager.GetHandle();
+
+if (ui_manager.IsPaused()) {
+    // Unlock mouse - show cursor, normal behavior
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+} else {
+    // Lock mouse - hide cursor, infinite movement for camera
+    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+}
+```
+
+**Mouse lock modes**:
+- `GLFW_CURSOR_NORMAL`: Cursor visible, normal behavior (for menus)
+- `GLFW_CURSOR_DISABLED`: Cursor hidden, locked to window center (for gameplay)
+
+### Pause Menu Button Handling
+
+**Handle mouse clicks on menu buttons**:
+```cpp
+if (ui_manager.IsPaused()) {
+    // Get cursor position
+    double mouse_x, mouse_y;
+    glfwGetCursorPos(window, &mouse_x, &mouse_y);
+    
+    // Check for left mouse button click
+    if (input_handler.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+        auto action = ui_manager.HandleMouseClick(
+            static_cast<float>(mouse_x),
+            static_cast<float>(mouse_y)
+        );
+        
+        if (action == blec::ui::UIManager::ButtonAction::Resume) {
+            ui_manager.TogglePause();  // Resume game
+        } else if (action == blec::ui::UIManager::ButtonAction::Quit) {
+            window_manager.SetShouldClose(true);  // Exit app
+        }
+        // action == ButtonAction::None means no button was clicked
+    }
+}
+```
+
+### Rendering UI Elements
+
+**Render crosshair and pause menu**:
+```cpp
+// In your main loop rendering phase:
+
+// Render 2D overlay
+renderer.Begin2D(fb_width, fb_height);
+
+// Render crosshair (always visible)
+ui_manager.RenderCrosshair(renderer);
+
+// Render pause menu (only shown when paused)
+ui_manager.RenderPauseMenu(renderer, font);
+
+// ... render other UI elements (debug overlay, HUD, etc.) ...
+
+renderer.End2D();
+```
+
+### Handling Window Resize
+
+**Update UI when window size changes**:
+```cpp
+// If window is resizable, update UI dimensions
+int new_width, new_height;
+window_manager.GetFramebufferSize(&new_width, &new_height);
+ui_manager.UpdateScreenDimensions(new_width, new_height);
+```
+
+### Complete Example
+
+```cpp
+#include "ui/ui_manager.h"
+#include "window/window_manager.h"
+#include "input/input_handler.h"
+#include "render/renderer.h"
+#include "render/font.h"
+
+// Setup phase
+blec::ui::UIManager ui_manager;
+ui_manager.Initialize(1280, 720);
+
+blec::window::WindowManager window_manager;
+blec::input::InputHandler input_handler;
+blec::render::Renderer renderer;
+blec::render::BitmapFont font;
+
+// ... initialize other systems ...
+
+static bool esc_was_down = false;
+
+// Main loop
+while (!window_manager.ShouldClose()) {
+    window_manager.PollEvents();
+    
+    // Handle ESC to toggle pause
+    if (input_handler.IsKeyDown(GLFW_KEY_ESCAPE)) {
+        if (!esc_was_down) {
+            ui_manager.TogglePause();
+            esc_was_down = true;
+        }
+    } else {
+        esc_was_down = false;
+    }
+    
+    // Update mouse lock
+    GLFWwindow* window = window_manager.GetHandle();
+    if (ui_manager.IsPaused()) {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+        
+        // Handle pause menu clicks
+        double mouse_x, mouse_y;
+        glfwGetCursorPos(window, &mouse_x, &mouse_y);
+        if (input_handler.IsMouseButtonDown(GLFW_MOUSE_BUTTON_LEFT)) {
+            auto action = ui_manager.HandleMouseClick(
+                static_cast<float>(mouse_x), 
+                static_cast<float>(mouse_y)
+            );
+            if (action == blec::ui::UIManager::ButtonAction::Resume) {
+                ui_manager.TogglePause();
+            } else if (action == blec::ui::UIManager::ButtonAction::Quit) {
+                window_manager.SetShouldClose(true);
+            }
+        }
+    } else {
+        glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        
+        // ... handle gameplay: camera movement, etc. ...
+    }
+    
+    // ... update game logic ...
+    
+    // Rendering
+    int fb_width, fb_height;
+    window_manager.GetFramebufferSize(&fb_width, &fb_height);
+    
+    renderer.SetViewport(fb_width, fb_height);
+    renderer.Clear(0.1f, 0.15f, 0.2f, 1.0f);
+    
+    // ... render 3D scene ...
+    
+    // Render 2D UI
+    renderer.Begin2D(fb_width, fb_height);
+    ui_manager.RenderCrosshair(renderer);
+    ui_manager.RenderPauseMenu(renderer, font);
+    renderer.End2D();
+    
+    window_manager.SwapBuffers();
+}
+```
+
+### UI Customization
+
+**Adjust crosshair appearance** (in `ui_manager.h`):
+- `kCrosshairSize`: Line length (default 20px)
+- `kCrosshairThickness`: Line width (default 2px)
+- Modify color in `RenderCrosshair()` via `SetColor(r, g, b, a)`
+
+**Adjust pause menu layout** (in `ui_manager.h`):
+- `kButtonWidth`: Button width (default 150px)
+- `kButtonHeight`: Button height (default 40px)
+- `kButtonSpacing`: Vertical gap between buttons (default 20px)
+- `kMenuBackgroundAlpha`: Background opacity (default 0.7)
+
+**Button colors** (in `RenderPauseMenu()`):
+- Resume button: Green `(0.2, 0.6, 0.2, 0.9)`
+- Quit button: Red `(0.6, 0.2, 0.2, 0.9)`
+- Background: Black `(0.0, 0.0, 0.0, 0.7)`
+
+### Common Patterns
+
+**Freeze gameplay when paused**:
+```cpp
+if (!ui_manager.IsPaused()) {
+    // Only update game logic when not paused
+    camera.Update(delta_time);
+    block_system.UpdateVisibility();
+    // ... other game updates ...
+}
+```
+
+**Both ESC and button resume**:
+```cpp
+// ESC key
+if (esc_was_down && !input_handler.IsKeyDown(GLFW_KEY_ESCAPE)) {
+    ui_manager.TogglePause();
+}
+
+// Resume button
+auto action = ui_manager.HandleMouseClick(x, y);
+if (action == UIManager::ButtonAction::Resume) {
+    ui_manager.TogglePause();
+}
+```
+
+**Custom button actions**:
+```cpp
+// Add more buttons by extending ButtonAction enum
+// Modify RenderPauseMenu() to draw additional buttons
+// Update HandleMouseClick() to detect new button hits
+```
+
+### Troubleshooting
+
+**Mouse not locking**:
+- Verify GLFW window is created and current
+- Check `!ui_manager.IsPaused()` before setting `GLFW_CURSOR_DISABLED`
+- Ensure GLFW version 3.4+ supports cursor modes
+
+**Crosshair not visible**:
+- Check `RenderCrosshair()` is called in 2D rendering phase
+- Verify renderer is in 2D mode via `Begin2D()`
+- Ensure alpha blending is enabled for transparency
+
+**Pause menu not showing**:
+- Verify `ui_manager.IsPaused()` returns true
+- Check `RenderPauseMenu()` is called after `Begin2D()`
+- Ensure screen dimensions are set via `Initialize()`
+
+**Buttons not responding**:
+- Verify mouse coordinates are in screen space (not normalized)
+- Check `glfwGetCursorPos()` provides correct values
+- Ensure click detection happens when paused
+
+**ESC closes instead of pausing**:
+- Remove any `window_manager.SetShouldClose()` calls tied to ESC
+- Use toggle detection with `esc_was_down` flag
+- Verify `TogglePause()` is called, not `SetShouldClose()`
+
 ## Testing Guidelines
 
 

@@ -18,6 +18,8 @@ set(TEST_SOURCES
 )
 
 # Build each test as a separate executable
+set(TEST_TARGETS)
+
 foreach(TEST_SOURCE ${TEST_SOURCES})
     # Extract test name from path
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)
@@ -53,6 +55,8 @@ foreach(TEST_SOURCE ${TEST_SOURCES})
     set_target_properties(${TEST_NAME} PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/tests
     )
+
+    list(APPEND TEST_TARGETS ${TEST_NAME})
 endforeach()
 
 # Optional: Add custom target to run all tests
@@ -61,6 +65,8 @@ add_custom_target(run_tests
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     COMMENT "Running unit tests"
 )
+
+add_dependencies(run_tests ${TEST_TARGETS})
 
 foreach(TEST_SOURCE ${TEST_SOURCES})
     get_filename_component(TEST_NAME ${TEST_SOURCE} NAME_WE)

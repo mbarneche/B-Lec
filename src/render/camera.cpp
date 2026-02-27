@@ -3,6 +3,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 
 #include "render/camera.h"
+#include <glm/gtc/constants.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/vector_angle.hpp>
 #include <cmath>
@@ -17,11 +18,12 @@ Camera::Camera()
     , right_(1.0f, 0.0f, 0.0f)
     , up_(0.0f, 1.0f, 0.0f)
     , world_up_(0.0f, 1.0f, 0.0f)
-    , yaw_(-90.0f)  // Look down -Z axis
+    , yaw_(-glm::half_pi<float>())  // Look down -Z axis
     , pitch_(0.0f)
     , movement_speed_(5.0f)  // 5 units per second
-    , rotation_speed_(0.005f)  // radians per pixel
-    , is_moving_(false) {
+    , rotation_speed_(0.005f)  // radians per input unit (typically pixels)
+    , is_moving_(false)
+    , movement_input_(0.0f) {
 }
 
 void Camera::Initialize(const glm::vec3& position, const glm::vec3& target) {
@@ -34,48 +36,55 @@ void Camera::Initialize(const glm::vec3& position, const glm::vec3& target) {
     // Calculate yaw from forward direction
     // Forward = (cos(yaw) * cos(pitch), sin(pitch), sin(yaw) * cos(pitch))
     // We want to find yaw and pitch from forward
-    float pitch = glm::asin(forward_.y);
-    float yaw = glm::atan(forward_.z, forward_.x);
-
-    pitch_ = glm::degrees(pitch);
-    yaw_ = glm::degrees(yaw);
+    pitch_ = glm::asin(forward_.y);
+    yaw_ = glm::atan(forward_.z, forward_.x);
 
     UpdateVectors();
 }
 
 void Camera::MoveForward(float distance) {
-    position_ += forward_ * distance;
-    is_moving_ = true;
+    movement_input_.z += distance;
 }
 
 void Camera::MoveRight(float distance) {
-    position_ += right_ * distance;
-    is_moving_ = true;
+    movement_input_.x += distance;
 }
 
 void Camera::MoveUp(float distance) {
-    position_ += world_up_ * distance;
-    is_moving_ = true;
+    movement_input_.y += distance;
 }
 
-void Camera::Yaw(float angleRadians) {
-    yaw_ += glm::degrees(angleRadians);
+void Camera::Yaw(float input) {
+    yaw_ += input * rotation_speed_;
     UpdateVectors();
 }
 
-void Camera::Pitch(float angleRadians) {
-    pitch_ += glm::degrees(angleRadians);
+void Camera::Pitch(float input) {
+    pitch_ += input * rotation_speed_;
 
     // Clamp pitch to prevent camera flip (looking too far up/down)
     // Use 89.9 degrees instead of 90 to avoid gimbal lock
-    pitch_ = std::clamp(pitch_, -89.9f, 89.9f);
+    const float pitch_limit = glm::radians(89.9f);
+    pitch_ = std::clamp(pitch_, -pitch_limit, pitch_limit);
 
     UpdateVectors();
 }
 
 void Camera::Update(double deltaTime) {
-    // Reset movement flag for this frame
-    is_moving_ = false;
+    // Apply queued movement input
+    const float dt = static_cast<float>(deltaTime);
+    if (movement_input_ != glm::vec3(0.0f)) {
+        glm::vec3 movement = (right_ * movement_input_.x) +
+                             (world_up_ * movement_input_.y) +
+                             (forward_ * movement_input_.z);
+        position_ += movement * movement_speed_ * dt;
+        is_moving_ = true;
+    } else {
+        is_moving_ = false;
+    }
+
+    // Reset movement input for next frame
+    movement_input_ = glm::vec3(0.0f);
 }
 
 glm::mat4 Camera::GetViewMatrix() const {
@@ -90,12 +99,9 @@ void Camera::UpdateVectors() {
     // forward.y = sin(pitch)
     // forward.z = sin(yaw) * cos(pitch)
 
-    float yawRad = glm::radians(yaw_);
-    float pitchRad = glm::radians(pitch_);
-
-    forward_.x = cos(yawRad) * cos(pitchRad);
-    forward_.y = sin(pitchRad);
-    forward_.z = sin(yawRad) * cos(pitchRad);
+    forward_.x = cos(yaw_) * cos(pitch_);
+    forward_.y = sin(pitch_);
+    forward_.z = sin(yaw_) * cos(pitch_);
 
     forward_ = glm::normalize(forward_);
 

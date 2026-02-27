@@ -34,6 +34,8 @@ void DebugOverlay::Toggle() {
 }
 
 void DebugOverlay::Update(const input::InputHandler& input, double deltaTime) {
+    (void)input;  // Input is queried during Render/BuildDebugLines.
+
     // Update FPS calculation
     frame_accumulator_ += deltaTime;
     frame_count_ += 1;

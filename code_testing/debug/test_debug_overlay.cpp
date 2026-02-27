@@ -6,6 +6,50 @@
 #include "debug/debug_overlay.h"
 #include "input/input_handler.h"
 #include "render/font.h"
+#include <GLFW/glfw3.h>
+
+namespace {
+
+struct GLContextGuard {
+    GLContextGuard() {
+        if (!glfwInit()) {
+            return;
+        }
+
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        window = glfwCreateWindow(64, 64, "test_debug_overlay", nullptr, nullptr);
+        if (!window) {
+            glfwTerminate();
+            return;
+        }
+
+        glfwMakeContextCurrent(window);
+        ok = true;
+    }
+
+    ~GLContextGuard() {
+        if (window) {
+            glfwDestroyWindow(window);
+        }
+        glfwTerminate();
+    }
+
+    GLFWwindow* window = nullptr;
+    bool ok = false;
+};
+
+const GLContextGuard g_gl_context;
+
+bool HasGLContext() {
+    return g_gl_context.ok;
+}
+
+#define REQUIRE_GL_CONTEXT() \
+    if (!HasGLContext()) { \
+        return; \
+    }
+
+} // namespace
 
 using namespace blec::debug;
 using namespace blec::input;
@@ -104,6 +148,7 @@ TEST_CASE(TestWarningRecording) {
 
 // Test rendering when invisible
 TEST_CASE(TestRenderInvisible) {
+    REQUIRE_GL_CONTEXT();
     DebugOverlay overlay;
     InputHandler input;
     BitmapFont font;
@@ -116,6 +161,7 @@ TEST_CASE(TestRenderInvisible) {
 
 // Test rendering when visible (without OpenGL context)
 TEST_CASE(TestRenderVisible) {
+    REQUIRE_GL_CONTEXT();
     DebugOverlay overlay;
     InputHandler input;
     BitmapFont font;
@@ -129,6 +175,7 @@ TEST_CASE(TestRenderVisible) {
 
 // Test complete update and render cycle
 TEST_CASE(TestUpdateAndRender) {
+    REQUIRE_GL_CONTEXT();
     DebugOverlay overlay;
     InputHandler input;
     BitmapFont font;

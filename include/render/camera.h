@@ -20,28 +20,28 @@ public:
     // Initialize camera with position and look-at target
     void Initialize(const glm::vec3& position, const glm::vec3& target);
 
-    // Move camera forward/backward along its forward vector
-    // positive distance = forward, negative = backward
+    // Queue forward/backward movement input (unitless).
+    // Input is applied in Update() using movement speed and delta time.
     void MoveForward(float distance);
 
-    // Move camera left/right along its right vector
-    // positive distance = right, negative = left (strafe)
+    // Queue left/right movement input (unitless).
+    // Input is applied in Update() using movement speed and delta time.
     void MoveRight(float distance);
 
-    // Move camera up/down along world up vector
-    // positive distance = up, negative = down
+    // Queue up/down movement input (unitless).
+    // Input is applied in Update() using movement speed and delta time.
     void MoveUp(float distance);
 
-    // Rotate camera around Y axis (horizontal rotation)
-    // positive angle = counterclockwise (left), negative = clockwise (right)
-    void Yaw(float angleRadians);
+    // Apply yaw input (unitless). Input is scaled by rotation speed.
+    // Positive input rotates left (counterclockwise).
+    void Yaw(float input);
 
-    // Rotate camera around its right vector (vertical rotation)
-    // positive angle = look up, negative = look down
+    // Apply pitch input (unitless). Input is scaled by rotation speed.
+    // Positive input looks up, negative looks down.
     // Clamped to prevent flipping (-89.9 to 89.9 degrees)
-    void Pitch(float angleRadians);
+    void Pitch(float input);
 
-    // Update camera based on delta time
+    // Apply queued input using delta time (seconds)
     // Should be called once per frame
     void Update(double deltaTime);
 
@@ -69,7 +69,7 @@ public:
     // Set camera movement speed (units per second)
     void SetMovementSpeed(float speed) { movement_speed_ = speed; }
 
-    // Set camera rotation speed (radians per pixel of mouse movement)
+    // Set camera rotation speed (radians per input unit, typically pixels)
     void SetRotationSpeed(float speed) { rotation_speed_ = speed; }
 
     // Check if movement keys are still being processed
@@ -92,7 +92,7 @@ private:
     // World up vector (always points up, used as reference)
     glm::vec3 world_up_;
 
-    // Euler angles for rotation state
+    // Euler angles for rotation state (radians)
     float yaw_;      // Rotation around Y axis
     float pitch_;    // Rotation around right axis
 
@@ -102,6 +102,10 @@ private:
 
     // State tracking
     bool is_moving_;  // Whether camera moved this frame
+
+    // Accumulated movement input for this frame
+    // x = right, y = up, z = forward
+    glm::vec3 movement_input_;
 
     // Recalculate forward, right, up vectors from euler angles
     void UpdateVectors();

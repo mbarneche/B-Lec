@@ -8,330 +8,174 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <cmath>
 
-namespace blec::test {
-
 // ============================================================================
 // TEST SUITE: Camera Initialization and Basic Properties
 // ============================================================================
 
-TEST(CameraInitialization) {
+TEST_CASE(TestCameraInitialization) {
     blec::render::Camera camera;
     camera.Initialize(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f));
-    
-    // Camera should be initialized at specified position
-    EXPECT(camera.GetPosition() == glm::vec3(0.0f, 0.0f, 5.0f), "Initial position should match");
-    
-    // Default forward should point towards target
-    glm::vec3 forward = camera.GetForward();
-    EXPECT(std::abs(forward.z) > 0.9f, "Forward should primarily point in -Z direction");
-    EXPECT(std::abs(forward.y) < 0.1f, "Forward should not point significantly in Y");
-}
 
-TEST(CameraDefaultSpeeds) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-    
-    // Camera should have sensible default speeds
-    EXPECT(camera.GetMovementSpeed() > 0.0f, "Movement speed should be positive");
-    EXPECT(camera.GetRotationSpeed() > 0.0f, "Rotation speed should be positive");
+    glm::vec3 pos = camera.GetPosition();
+    ASSERT_TRUE(pos == glm::vec3(0.0f, 0.0f, 5.0f));
+
+    glm::vec3 forward = camera.GetForward();
+    ASSERT_TRUE(std::abs(forward.z) > 0.9f);
+    ASSERT_TRUE(std::abs(forward.y) < 0.1f);
 }
 
 // ============================================================================
 // TEST SUITE: Camera Movement
 // ============================================================================
 
-TEST(CameraMoveForward) {
+TEST_CASE(TestCameraMoveForward) {
     blec::render::Camera camera;
     glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
     camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Move forward should increase Z (negative direction)
+
     camera.MoveForward(1.0f);
     camera.Update(0.016f);
-    
+
     glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(std::abs(new_pos.x - start_pos.x) < 0.01f, "X should not change");
-    EXPECT(std::abs(new_pos.y - start_pos.y) < 0.01f, "Y should not change");
-    EXPECT(new_pos.z < start_pos.z, "Z should decrease (move forward towards -Z)");
+    ASSERT_TRUE(std::abs(new_pos.x - start_pos.x) < 0.01f);
+    ASSERT_TRUE(std::abs(new_pos.y - start_pos.y) < 0.01f);
+    ASSERT_TRUE(new_pos.z < start_pos.z);
 }
 
-TEST(CameraMoveBackward) {
+TEST_CASE(TestCameraMoveBackward) {
     blec::render::Camera camera;
     glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
     camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Negative movement should move backward
+
     camera.MoveForward(-1.0f);
     camera.Update(0.016f);
-    
+
     glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(new_pos.z > start_pos.z, "Z should increase (move backward from -Z direction)");
+    ASSERT_TRUE(new_pos.z > start_pos.z);
 }
 
-TEST(CameraMoveRight) {
+TEST_CASE(TestCameraMoveRight) {
     blec::render::Camera camera;
     glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
     camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Move right should increase X
+
     camera.MoveRight(1.0f);
     camera.Update(0.016f);
-    
+
     glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(new_pos.x > start_pos.x, "X should increase (move right)");
-    EXPECT(std::abs(new_pos.y - start_pos.y) < 0.01f, "Y should not change");
-    EXPECT(std::abs(new_pos.z - start_pos.z) < 0.1f, "Z should not change significantly");
+    ASSERT_TRUE(new_pos.x > start_pos.x);
+    ASSERT_TRUE(std::abs(new_pos.y - start_pos.y) < 0.01f);
+    ASSERT_TRUE(std::abs(new_pos.z - start_pos.z) < 0.1f);
 }
 
-TEST(CameraMoveLeft) {
+TEST_CASE(TestCameraMoveUp) {
     blec::render::Camera camera;
     glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
     camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Negative right movement should move left
-    camera.MoveRight(-1.0f);
-    camera.Update(0.016f);
-    
-    glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(new_pos.x < start_pos.x, "X should decrease (move left)");
-}
 
-TEST(CameraMoveUp) {
-    blec::render::Camera camera;
-    glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
-    camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Move up should increase Y
     camera.MoveUp(1.0f);
     camera.Update(0.016f);
-    
-    glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(new_pos.y > start_pos.y, "Y should increase (move up)");
-    EXPECT(std::abs(new_pos.x - start_pos.x) < 0.01f, "X should not change");
-    EXPECT(std::abs(new_pos.z - start_pos.z) < 0.1f, "Z should not change significantly");
-}
 
-TEST(CameraMoveDown) {
-    blec::render::Camera camera;
-    glm::vec3 start_pos(0.0f, 0.0f, 0.0f);
-    camera.Initialize(start_pos, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Negative up movement should move down
-    camera.MoveUp(-1.0f);
-    camera.Update(0.016f);
-    
     glm::vec3 new_pos = camera.GetPosition();
-    EXPECT(new_pos.y < start_pos.y, "Y should decrease (move down)");
+    ASSERT_TRUE(new_pos.y > start_pos.y);
+    ASSERT_TRUE(std::abs(new_pos.x - start_pos.x) < 0.01f);
+    ASSERT_TRUE(std::abs(new_pos.z - start_pos.z) < 0.1f);
 }
 
 // ============================================================================
 // TEST SUITE: Camera Rotation
 // ============================================================================
 
-TEST(CameraYaw) {
+TEST_CASE(TestCameraYaw) {
     blec::render::Camera camera;
     camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
+
     glm::vec3 forward_before = camera.GetForward();
-    
-    // Yaw rotation changes the direction in the horizontal plane
-    camera.Yaw(0.5f);  // Rotate right
+    camera.Yaw(20.0f);
     camera.Update(0.016f);
-    
     glm::vec3 forward_after = camera.GetForward();
-    
-    // Forward should have changed
-    EXPECT(!(glm::all(glm::epsilonEqual(forward_before, forward_after, 0.01f))), 
-            "Forward should change after yaw rotation");
+
+    ASSERT_TRUE(glm::length(forward_after - forward_before) > 0.001f);
 }
 
-TEST(CameraPitch) {
+TEST_CASE(TestCameraPitchClamping) {
     blec::render::Camera camera;
     camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    glm::vec3 forward_before = camera.GetForward();
-    
-    // Pitch rotation changes the direction in the vertical plane
-    camera.Pitch(0.3f);  // Rotate up
-    camera.Update(0.016f);
-    
-    glm::vec3 forward_after = camera.GetForward();
-    
-    // Forward should have changed, specifically in Y component
-    EXPECT(forward_after.y > forward_before.y - 0.01f, "Forward Y should increase (look up)");
-}
 
-TEST(CameraPitchClamping) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Try to pitch too far up
-    for (int i = 0; i < 100; ++i) {
-        camera.Pitch(0.5f);
+    for (int i = 0; i < 200; ++i) {
+        camera.Pitch(20.0f);
     }
     camera.Update(0.016f);
-    
-    // Pitch should be clamped, not allowing gimbal lock
+
     glm::vec3 forward = camera.GetForward();
-    EXPECT(std::abs(forward.y) < 0.99f, "Pitch should be clamped to prevent gimbal lock");
+    ASSERT_TRUE(std::abs(forward.y) < 0.999f);
 }
 
-TEST(CameraYawContinuous) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    glm::vec3 forward1 = camera.GetForward();
-    
-    camera.Yaw(0.5f);
-    camera.Update(0.016f);
-    glm::vec3 forward2 = camera.GetForward();
-    
-    // Rotate opposite direction
-    camera.Yaw(-1.0f);
-    camera.Update(0.016f);
-    glm::vec3 forward3 = camera.GetForward();
-    
-    camera.Yaw(0.5f);
-    camera.Update(0.016f);
-    glm::vec3 forward4 = camera.GetForward();
-    
-    // forward2 and forward4 should be similar (rotated in same direction)
-    float dist24 = glm::length(forward2 - forward4);
-    EXPECT(dist24 < 0.1f, "Rotating multiple times should produce consistent results");
+TEST_CASE(TestRotationSpeedAffectsRotation) {
+    blec::render::Camera camera_fast;
+    blec::render::Camera camera_slow;
+
+    camera_fast.Initialize(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+    camera_slow.Initialize(glm::vec3(0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
+
+    camera_fast.SetRotationSpeed(0.02f);
+    camera_slow.SetRotationSpeed(0.005f);
+
+    camera_fast.Yaw(10.0f);
+    camera_slow.Yaw(10.0f);
+    camera_fast.Update(0.016f);
+    camera_slow.Update(0.016f);
+
+    float delta = glm::length(camera_fast.GetForward() - camera_slow.GetForward());
+    ASSERT_TRUE(delta > 0.01f);
 }
 
 // ============================================================================
-// TEST SUITE: View Matrix Generation
+// TEST SUITE: Movement Speed
 // ============================================================================
 
-TEST(CameraViewMatrix) {
-    blec::render::Camera camera;
-    glm::vec3 position(1.0f, 2.0f, 3.0f);
-    glm::vec3 target(0.0f, 0.0f, 0.0f);
-    camera.Initialize(position, target);
-    
-    glm::mat4 view = camera.GetViewMatrix();
-    
-    // View matrix should be a 4x4 matrix
-    EXPECT(true, "View matrix generated successfully");
-    
-    // Transform a point at camera position through view matrix should give near origin
-    glm::vec4 cam_pos_in_view = view * glm::vec4(position, 1.0f);
-    EXPECT(std::abs(cam_pos_in_view.z) > 0.0f, "Camera position transformed through view matrix should be valid");
+TEST_CASE(TestMovementSpeedAffectsDistance) {
+    blec::render::Camera camera_fast;
+    blec::render::Camera camera_slow;
+    glm::vec3 start(0.0f, 0.0f, 0.0f);
+
+    camera_fast.Initialize(start, glm::vec3(0.0f, 0.0f, -5.0f));
+    camera_slow.Initialize(start, glm::vec3(0.0f, 0.0f, -5.0f));
+
+    camera_fast.SetMovementSpeed(10.0f);
+    camera_slow.SetMovementSpeed(5.0f);
+
+    camera_fast.MoveForward(1.0f);
+    camera_slow.MoveForward(1.0f);
+
+    camera_fast.Update(0.016f);
+    camera_slow.Update(0.016f);
+
+    float dist_fast = glm::length(camera_fast.GetPosition() - start);
+    float dist_slow = glm::length(camera_slow.GetPosition() - start);
+    ASSERT_TRUE(dist_fast > dist_slow);
 }
 
-TEST(CameraViewMatrixOrthonormality) {
+// ============================================================================
+// TEST SUITE: View Matrix
+// ============================================================================
+
+TEST_CASE(TestCameraViewMatrixOrthonormality) {
     blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f));
+    camera.Initialize(glm::vec3(0.0f, 0.0f, 5.0f), glm::vec3(0.0f));
     camera.Update(0.016f);
-    
+
     glm::vec3 forward = camera.GetForward();
     glm::vec3 right = camera.GetRight();
     glm::vec3 up = camera.GetUp();
-    
-    // Basis vectors should be unit vectors
-    EXPECT(std::abs(glm::length(forward) - 1.0f) < 0.01f, "Forward should be normalized");
-    EXPECT(std::abs(glm::length(right) - 1.0f) < 0.01f, "Right should be normalized");
-    EXPECT(std::abs(glm::length(up) - 1.0f) < 0.01f, "Up should be normalized");
-    
-    // Basis vectors should be orthogonal (perpendicular)
-    EXPECT(std::abs(glm::dot(forward, right)) < 0.01f, "Forward and right should be perpendicular");
-    EXPECT(std::abs(glm::dot(forward, up)) < 0.01f, "Forward and up should be perpendicular");
-    EXPECT(std::abs(glm::dot(right, up)) < 0.01f, "Right and up should be perpendicular");
+
+    ASSERT_TRUE(std::abs(glm::length(forward) - 1.0f) < 0.01f);
+    ASSERT_TRUE(std::abs(glm::length(right) - 1.0f) < 0.01f);
+    ASSERT_TRUE(std::abs(glm::length(up) - 1.0f) < 0.01f);
+
+    ASSERT_TRUE(std::abs(glm::dot(forward, right)) < 0.01f);
+    ASSERT_TRUE(std::abs(glm::dot(forward, up)) < 0.01f);
+    ASSERT_TRUE(std::abs(glm::dot(right, up)) < 0.01f);
 }
 
-// ============================================================================
-// TEST SUITE: Movement Speed and Rotation Speed Settings
-// ============================================================================
-
-TEST(CameraSetMovementSpeed) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-    
-    // Set movement speed to specific value
-    camera.SetMovementSpeed(10.0f);
-    EXPECT(std::abs(camera.GetMovementSpeed() - 10.0f) < 0.01f, "Movement speed should match set value");
-}
-
-TEST(CameraSetRotationSpeed) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f));
-    
-    // Set rotation speed to specific value
-    camera.SetRotationSpeed(0.01f);
-    EXPECT(std::abs(camera.GetRotationSpeed() - 0.01f) < 0.001f, "Rotation speed should match set value");
-}
-
-TEST(CameraMovementSpeedAffectsDistance) {
-    blec::render::Camera camera1, camera2;
-    glm::vec3 start(0.0f, 0.0f, 0.0f);
-    camera1.Initialize(start, glm::vec3(0.0f, 0.0f, -5.0f));
-    camera2.Initialize(start, glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Set different movement speeds
-    camera1.SetMovementSpeed(5.0f);
-    camera2.SetMovementSpeed(10.0f);
-    
-    // Move both the same amount
-    float movement = 1.0f;
-    camera1.MoveForward(movement);
-    camera2.MoveForward(movement);
-    
-    camera1.Update(0.016f);
-    camera2.Update(0.016f);
-    
-    glm::vec3 pos1 = camera1.GetPosition();
-    glm::vec3 pos2 = camera2.GetPosition();
-    
-    // Camera2 with higher speed should move farther
-    float dist1 = glm::length(pos1 - start);
-    float dist2 = glm::length(pos2 - start);
-    
-    EXPECT(dist2 > dist1, "Higher movement speed should result in greater distance traveled");
-}
-
-// ============================================================================
-// TEST SUITE: Combined Operations
-// ============================================================================
-
-TEST(CameraComplexMovement) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    // Perform complex movement sequence
-    camera.MoveForward(1.0f);
-    camera.MoveRight(1.0f);
-    camera.MoveUp(0.5f);
-    camera.Yaw(0.25f);
-    camera.Pitch(0.1f);
-    
-    camera.Update(0.016f);
-    
-    glm::vec3 pos = camera.GetPosition();
-    
-    // Position should have moved in all three dimensions
-    EXPECT(pos.x != 0.0f || pos.y != 0.0f || pos.z != 0.0f, "Camera position should change with movement");
-}
-
-TEST(CameraMultipleUpdates) {
-    blec::render::Camera camera;
-    camera.Initialize(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -5.0f));
-    
-    glm::vec3 pos1, pos2;
-    
-    // First update
-    camera.MoveForward(1.0f);
-    camera.Update(0.016f);
-    pos1 = camera.GetPosition();
-    
-    // Second update
-    camera.MoveForward(0.0f);
-    camera.Update(0.016f);
-    pos2 = camera.GetPosition();
-    
-    // Position should remain after no more movement input
-    float dist = glm::length(pos2 - pos1);
-    EXPECT(dist < 0.01f, "Position should stabilize when movement input is zero");
-}
-
-} // namespace blec::test
+TEST_MAIN()

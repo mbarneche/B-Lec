@@ -153,22 +153,22 @@ int main() {
         if (!ui_manager.IsPaused()) {
             // Handle camera movement (WASD keys)
             if (input_handler.IsKeyDown(GLFW_KEY_W) || input_handler.IsKeyDown(GLFW_KEY_UP)) {
-                camera.MoveForward(static_cast<float>(delta_time * 5.0));
+                camera.MoveForward(1.0f);
             }
             if (input_handler.IsKeyDown(GLFW_KEY_S) || input_handler.IsKeyDown(GLFW_KEY_DOWN)) {
-                camera.MoveForward(static_cast<float>(-delta_time * 5.0));
+                camera.MoveForward(-1.0f);
             }
             if (input_handler.IsKeyDown(GLFW_KEY_A) || input_handler.IsKeyDown(GLFW_KEY_LEFT)) {
-                camera.MoveRight(static_cast<float>(-delta_time * 5.0));
+                camera.MoveRight(-1.0f);
             }
             if (input_handler.IsKeyDown(GLFW_KEY_D) || input_handler.IsKeyDown(GLFW_KEY_RIGHT)) {
-                camera.MoveRight(static_cast<float>(delta_time * 5.0));
+                camera.MoveRight(1.0f);
             }
             if (input_handler.IsKeyDown(GLFW_KEY_SPACE)) {
-                camera.MoveUp(static_cast<float>(delta_time * 5.0));
+                camera.MoveUp(1.0f);
             }
             if (input_handler.IsKeyDown(GLFW_KEY_LEFT_SHIFT)) {
-                camera.MoveUp(static_cast<float>(-delta_time * 5.0));
+                camera.MoveUp(-1.0f);
             }
 
             // Handle camera rotation (mouse look)
@@ -177,8 +177,8 @@ int main() {
             input_handler.GetMouseLookDelta(&mouse_dx, &mouse_dy);
 
             // Some mice might be inverted, standard is positive Y = look up
-            camera.Yaw(static_cast<float>(mouse_dx * 0.005f));
-            camera.Pitch(static_cast<float>(-mouse_dy * 0.005f));  // Inverted for natural look
+            camera.Yaw(static_cast<float>(mouse_dx));
+            camera.Pitch(static_cast<float>(-mouse_dy));  // Inverted for natural look
         }
 
         // Update camera and debug overlay
@@ -189,6 +189,12 @@ int main() {
         int fb_width = 0;
         int fb_height = 0;
         window_manager.GetFramebufferSize(&fb_width, &fb_height);
+
+        if (fb_width <= 0 || fb_height <= 0) {
+            window_manager.SwapBuffers();
+            input_handler.ResetMouseDelta();
+            continue;
+        }
 
         // Set viewport and clear screen
         renderer.SetViewport(fb_width, fb_height);

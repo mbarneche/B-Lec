@@ -4,6 +4,50 @@
 
 #include "test_framework.h"
 #include "render/font.h"
+#include <GLFW/glfw3.h>
+
+namespace {
+
+struct GLContextGuard {
+    GLContextGuard() {
+        if (!glfwInit()) {
+            return;
+        }
+
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        window = glfwCreateWindow(64, 64, "test_font", nullptr, nullptr);
+        if (!window) {
+            glfwTerminate();
+            return;
+        }
+
+        glfwMakeContextCurrent(window);
+        ok = true;
+    }
+
+    ~GLContextGuard() {
+        if (window) {
+            glfwDestroyWindow(window);
+        }
+        glfwTerminate();
+    }
+
+    GLFWwindow* window = nullptr;
+    bool ok = false;
+};
+
+const GLContextGuard g_gl_context;
+
+bool HasGLContext() {
+    return g_gl_context.ok;
+}
+
+#define REQUIRE_GL_CONTEXT() \
+    if (!HasGLContext()) { \
+        return; \
+    }
+
+} // namespace
 
 using namespace blec::render;
 
@@ -27,6 +71,7 @@ TEST_CASE(TestFontDimensions) {
 // Test that DrawChar doesn't crash with valid characters
 // Note: Actual rendering requires OpenGL context, so we just test it doesn't crash
 TEST_CASE(TestDrawCharValidRange) {
+    REQUIRE_GL_CONTEXT();
     BitmapFont font;
     
     // These calls should not crash (even without GL context, they'll just be no-ops)
@@ -38,6 +83,7 @@ TEST_CASE(TestDrawCharValidRange) {
 
 // Test that DrawChar handles invalid characters gracefully
 TEST_CASE(TestDrawCharInvalidRange) {
+    REQUIRE_GL_CONTEXT();
     BitmapFont font;
     
     // These should be safely ignored
@@ -49,6 +95,7 @@ TEST_CASE(TestDrawCharInvalidRange) {
 
 // Test DrawText with various strings
 TEST_CASE(TestDrawText) {
+    REQUIRE_GL_CONTEXT();
     BitmapFont font;
     
     // These should not crash
@@ -60,6 +107,7 @@ TEST_CASE(TestDrawText) {
 
 // Test multi-line text handling
 TEST_CASE(TestMultilineText) {
+    REQUIRE_GL_CONTEXT();
     BitmapFont font;
     
     // Multi-line text with newlines should not crash

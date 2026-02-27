@@ -8,7 +8,7 @@
 namespace blec {
 namespace render {
 
-Mesh::Mesh() : culling_enabled_(true) {
+Mesh::Mesh() : culling_enabled_(false) {
 }
 
 Mesh::~Mesh() {

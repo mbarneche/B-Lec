@@ -139,8 +139,15 @@ bool BlockSystem::SetBlock(int32_t x, int32_t y, int32_t z, Block block) {
         return false;  // Out of bounds
     }
 
+    const uint8_t previous_type = blocks_[idx].type;
     blocks_[idx] = block;
-    RecalculateTotalBlockCount();  // Update total count
+
+    if (previous_type == 0 && block.type != 0) {
+        total_blocks_ += 1;
+    } else if (previous_type != 0 && block.type == 0) {
+        total_blocks_ -= 1;
+    }
+
     return true;
 }
 

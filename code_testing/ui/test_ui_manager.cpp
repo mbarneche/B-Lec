@@ -243,3 +243,5 @@ TEST_CASE(TestButtonBoundaryClick) {
     ASSERT_TRUE(result1 == blec::ui::UIManager::ButtonAction::None ||
                 result1 == blec::ui::UIManager::ButtonAction::Resume);
 }
+
+TEST_MAIN()

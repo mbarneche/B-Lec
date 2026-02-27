@@ -1,14 +1,14 @@
 # B-Lec
 
-A C++ 3D voxel game prototype demonstrating modular architecture with window management, rendering, input handling, and block-based world system.
+A C++ 3D voxel game prototype demonstrating modular architecture with window management, rendering, input handling, and infinite chunk-based world system.
 
 ## Features
 
 - **Modular Architecture**: Clean separation of concerns across window, input, rendering, world, and debug systems
-- **3D Rendering**: OpenGL-based 3D graphics with camera control, mesh rendering, and frustum culling
-- **Voxel Grid System**: Block-based world with efficient frustum culling for visibility optimization
+- **3D Rendering**: OpenGL-based 3D graphics with camera control and mesh rendering
+- **Infinite Chunk-Based World**: Minecraft-style chunked world (16×16×256 chunks) with on-demand loading and sparse storage
 - **Input Handling**: Keyboard and mouse input with camera movement and look controls
-- **Debug Overlay**: Real-time debugging information including FPS, camera position, and block visibility counts
+- **Debug Overlay**: Real-time debugging information including FPS, camera position, and world statistics
 - **Cross-Platform**: Windows, Linux, and macOS support through GLFW and standard C++17
 - **Minimal Dependencies**: Only GLFW (windowing), OpenGL (rendering), and GLM (mathematics) required
 - **Lightweight Testing**: Custom testing framework with dedicated test suite for each module
@@ -17,7 +17,7 @@ A C++ 3D voxel game prototype demonstrating modular architecture with window man
 
 ### Prerequisites
 
-- CMake 3.20+
+- CMake 4.2+
 - C++17 compiler (MSVC, GCC, or Clang)
 - OpenGL 2.1 or higher
 - Internet access for first build (dependencies are auto-downloaded)
@@ -44,11 +44,11 @@ cmake --build . --parallel
 
 ### Controls
 
-- **W/A/S/D**: Move forward/left/backward/right
+- **W/A/S/D or Arrow Keys**: Move forward/left/backward/right
 - **Space/Ctrl**: Move up/down
 - **Mouse**: Look around (mouse capture when in window)
-- **F3**: Toggle debug overlay
-
+- **F12**: Toggle debug overlay
+- **Esc**: Pause game
 
 ## Architecture Overview
 
@@ -57,7 +57,7 @@ B-Lec follows a **modular architecture** with clear separation of concerns:
 - **Window Module**: GLFW window lifecycle and OS integration
 - **Input Module**: Keyboard and mouse state tracking
 - **Render Module**: OpenGL operations, font rendering, camera, and mesh management
-- **World Module**: Voxel grid system with frustum culling optimization
+- **World Module**: Infinite chunk-based world with on-demand chunk loading (16×16×256 blocks per chunk)
 - **Debug Module**: Real-time debugging overlay and statistics
 
 For detailed architecture, design principles, and module interactions, see [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).

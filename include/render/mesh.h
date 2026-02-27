@@ -50,6 +50,7 @@ public:
 
     // Enable/disable back-face culling for this mesh
     // When enabled, faces not facing camera won't be rendered
+    // Default is disabled for predictable behavior
     void SetBackfaceCulling(bool enabled) { culling_enabled_ = enabled; }
 
     // Check if back-face culling is enabled
